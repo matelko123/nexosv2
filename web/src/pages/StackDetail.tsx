@@ -7,10 +7,10 @@ import type { Me, StackOperation } from "../lib/types";
 import { Confirm, ErrorText, PanelHeader } from "../components/ui";
 import { CodeEditor } from "../components/CodeEditor";
 import { OutputConsole } from "../components/OutputConsole";
-import { StateBadge } from "../components/containers";
-import { UpdateBadge, useHostUpdates } from "../components/updates";
+import { useHostUpdates } from "../components/updates";
 import { HostPage } from "./HostPage";
 import { StackStatus } from "./Stacks";
+import { StackResources } from "./StackResources";
 
 export function StackDetailPage({ me }: { me: Me }) {
   const { id, name } = useParams({ from: "/hosts/$id/stacks/$name" });
@@ -92,14 +92,14 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
     <div className="space-y-5">
       <div className="rise flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <Link to="/hosts/$id/stacks" params={{ id: hostId }} className="label hover:!text-amber">
-            ← stacki
+          <Link to="/hosts/$id/stacks" params={{ id: hostId }} className="back-link">
+            ‹ Stacki
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-4">
-            <h2 className="font-display text-xl font-semibold tracking-wider">{stack.name}</h2>
+            <h2 className="text-[1.375rem] font-bold tracking-[-0.018em]">{stack.name}</h2>
             <StackStatus s={stack} />
-            <span className={`label border px-1.5 ${managed ? "border-amber-dim !text-amber" : "border-rule"}`}>{managed ? "zarządzany" : "zewnętrzny"}</span>
-            {locked && <span className="label border border-rule px-1.5 !text-amber-dim">nexos · chroniony</span>}
+            <span className={`label border px-1.5 ${managed ? "border-accent-dim !text-accent" : "border-rule"}`}>{managed ? "zarządzany" : "zewnętrzny"}</span>
+            {locked && <span className="label rounded-md border border-rule px-1.5 !text-accent-dim">nexos · chroniony</span>}
           </div>
           <div className="readout mt-1 truncate text-xs text-ink-3">{stack.working_dir}</div>
         </div>
@@ -108,34 +108,34 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
             {managed && (
               <>
                 <label className="label mr-1 flex cursor-pointer items-center gap-1.5">
-                  <input type="checkbox" className="accent-amber" checked={opts.pull} onChange={(e) => setOpts({ ...opts, pull: e.target.checked })} />
+                  <input type="checkbox" className="accent-accent" checked={opts.pull} onChange={(e) => setOpts({ ...opts, pull: e.target.checked })} />
                   pobierz obrazy
                 </label>
                 <button className="btn btn-primary" disabled={busy} onClick={() => op("up", { pull: opts.pull })}>
-                  up
+                  Up
                 </button>
                 <button className="btn" disabled={busy} onClick={() => op("pull")}>
-                  pull
+                  Pull
                 </button>
               </>
             )}
             {!managed && stack.status === "stopped" && (
               <button className="btn" disabled={busy} onClick={() => op("start")}>
-                start
+                Start
               </button>
             )}
             <button className="btn" disabled={busy || stack.status === "empty"} onClick={() => op("restart")}>
-              restart
+              Restart
             </button>
             <button className="btn" disabled={busy || stack.status === "empty" || stack.status === "stopped"} onClick={() => op("stop")}>
-              stop
+              Stop
             </button>
             <button className="btn btn-danger" disabled={busy || stack.status === "empty"} onClick={() => setConfirm("down")}>
-              down
+              Down
             </button>
             {managed && isAdmin && (
               <button className="btn btn-danger" disabled={busy} onClick={() => setConfirm("delete")}>
-                usuń
+                Usuń
               </button>
             )}
           </div>
@@ -145,27 +145,35 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
       {run && <OutputConsole run={run} onClose={clear} />}
 
       {outdated > 0 && canOperate && !locked && managed && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-l-2 border-cyan bg-cyan/5 px-4 py-2.5 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] bg-cyan/5 px-4 py-2.5 text-sm">
           <span>
             <span className="text-cyan">{outdated}</span> {outdated === 1 ? "kontener ma" : "kontenery mają"} nowszy obraz w rejestrze.
           </span>
-          <button className="btn !px-2.5 !py-1 !text-[10px]" disabled={busy} onClick={() => op("up", { pull: true })}>
-            pobierz i wdróż
+          <button className="btn btn-sm" disabled={busy} onClick={() => op("up", { pull: true })}>
+            Pobierz i wdróż
           </button>
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      {members.length > 0 ? (
+        <StackResources hostId={hostId} members={members} updates={upd.byContainer} />
+      ) : (
+        <div className="panel px-4 py-4 text-sm text-ink-3">Stack nie ma kontenerów — uruchom „up”, aby zobaczyć zużycie zasobów.</div>
+      )}
+
+      <div>
         <section className="panel flex min-h-[520px] flex-col">
           {managed ? (
             <>
               <div className="flex items-center justify-between gap-3 border-b border-rule px-3 py-2">
-                <div className="flex gap-1">
+                <div className="tabs" role="tablist">
                   {(["compose", "env"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setFile(f)}
-                      className={`readout px-2.5 py-1 text-xs ${file === f ? "bg-amber text-chassis" : "text-ink-2 hover:text-ink"}`}
+                      role="tab"
+                      aria-selected={file === f}
+                      className="tab readout"
                     >
                       {f === "compose" ? "compose.yaml" : ".env"}
                     </button>
@@ -174,11 +182,11 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
                 {isAdmin ? (
                   <div className="flex items-center gap-2">
                     {dirty && <span className="label !text-warn">niezapisane zmiany</span>}
-                    <button className="btn !px-2.5 !py-1 !text-[10px]" disabled={!dirty || save.isPending} onClick={() => save.mutate()} title="Ctrl+S">
-                      zapisz
+                    <button className="btn btn-sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()} title="Ctrl+S">
+                      Zapisz
                     </button>
-                    <button className="btn btn-primary !px-2.5 !py-1 !text-[10px]" disabled={(!dirty && stack.status === "running") || save.isPending || busy} onClick={saveAndDeploy}>
-                      zapisz i wdróż
+                    <button className="btn btn-primary btn-sm" disabled={(!dirty && stack.status === "running") || save.isPending || busy} onClick={saveAndDeploy}>
+                      Zapisz i wdróż
                     </button>
                   </div>
                 ) : (
@@ -198,7 +206,7 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
               </div>
               {save.error && (
                 <div className="border-t border-rule p-2">
-                  <pre className="readout max-h-40 overflow-auto border-l-2 border-alarm bg-alarm/10 px-3 py-2 text-xs whitespace-pre-wrap text-alarm">
+                  <pre className="readout max-h-40 overflow-auto rounded-[var(--radius-control)] bg-alarm/10 px-3 py-2 text-xs whitespace-pre-wrap text-alarm">
                     {save.error instanceof Error ? save.error.message : String(save.error)}
                   </pre>
                 </div>
@@ -229,47 +237,24 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
           )}
         </section>
 
-        <section className="panel self-start">
-          <PanelHeader title={`Kontenery (${members.length})`} />
-          <div className="divide-y divide-rule">
-            {members.map((c) => (
-              <Link
-                key={c.id}
-                to="/hosts/$id/containers/$cid"
-                params={{ id: hostId, cid: c.id }}
-                className="group flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-panel-2"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm group-hover:text-amber">{c.compose_service || c.name}</span>
-                    <UpdateBadge u={upd.byContainer.get(c.name)} />
-                  </div>
-                  <div className="readout truncate text-[11px] text-ink-3">{c.image}</div>
-                </div>
-                <StateBadge c={c} />
-              </Link>
-            ))}
-            {members.length === 0 && <div className="px-4 py-4 text-sm text-ink-3">Stack nie ma kontenerów — uruchom „up”.</div>}
-          </div>
-        </section>
       </div>
 
       {confirm === "down" && (
-        <Confirm title={`down · ${name}`} confirmLabel="down" danger onClose={() => setConfirm(null)} onConfirm={() => op("down", { remove_volumes: opts.volumes })}>
+        <Confirm title={`down · ${name}`} confirmLabel="Down" danger onClose={() => setConfirm(null)} onConfirm={() => op("down", { remove_volumes: opts.volumes })}>
           <p>Kontenery i sieci stacka zostaną usunięte. Dane w wolumenach nazwanych pozostaną, chyba że zaznaczysz inaczej.</p>
           {isAdmin && (
             <label className="flex items-center gap-2">
-              <input type="checkbox" className="accent-amber" checked={opts.volumes} onChange={(e) => setOpts({ ...opts, volumes: e.target.checked })} />
+              <input type="checkbox" className="accent-accent" checked={opts.volumes} onChange={(e) => setOpts({ ...opts, volumes: e.target.checked })} />
               <span className={opts.volumes ? "text-alarm" : ""}>usuń też wolumeny (nieodwracalne)</span>
             </label>
           )}
         </Confirm>
       )}
       {confirm === "delete" && (
-        <Confirm title={`usuń stack · ${name}`} confirmLabel="usuń stack" danger typeToConfirm={name} onClose={() => setConfirm(null)} onConfirm={remove}>
+        <Confirm title={`usuń stack · ${name}`} confirmLabel="Usuń stack" danger typeToConfirm={name} onClose={() => setConfirm(null)} onConfirm={remove}>
           <p>Wykonam „down” i usunę katalog stacka razem z compose.yaml i .env.</p>
           <label className="flex items-center gap-2">
-            <input type="checkbox" className="accent-amber" checked={opts.volumes} onChange={(e) => setOpts({ ...opts, volumes: e.target.checked })} />
+            <input type="checkbox" className="accent-accent" checked={opts.volumes} onChange={(e) => setOpts({ ...opts, volumes: e.target.checked })} />
             <span className={opts.volumes ? "text-alarm" : ""}>usuń też wolumeny (nieodwracalne)</span>
           </label>
         </Confirm>

@@ -25,7 +25,7 @@ export function StateBadge({ c }: { c: Container }) {
   const color = exitedWithError(c) || c.health === "unhealthy" ? "var(--color-alarm)" : s.color;
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-      <span className={`inline-block size-2 rounded-full ${c.state === "running" ? "lamp-on" : ""}`} style={{ background: color, color }} />
+      <span className={`inline-block size-2 rounded-full ${c.state === "running" ? "" : ""}`} style={{ background: color, color }} />
       <span className="label" style={{ color }}>
         {s.label}
       </span>
@@ -39,13 +39,13 @@ export function StateBadge({ c }: { c: Container }) {
 }
 
 const actionLabels: Record<ContainerAction | "remove", string> = {
-  start: "start",
-  stop: "stop",
-  restart: "restart",
-  kill: "kill",
-  pause: "pauza",
-  unpause: "wznów",
-  remove: "usuń",
+  start: "Start",
+  stop: "Stop",
+  restart: "Restart",
+  kill: "Kill",
+  pause: "Pauza",
+  unpause: "Wznów",
+  remove: "Usuń",
 };
 
 const confirmText: Partial<Record<ContainerAction | "remove", string>> = {
@@ -93,17 +93,17 @@ export function ContainerActions({
   });
 
   if (c.protected) {
-    return <span className="label border border-rule px-2 py-1 text-amber-dim" title="Kontener NexOS — chroniony przed zmianami z UI">nexos</span>;
+    return <span className="label rounded-md border border-rule px-2 py-1 text-accent-dim" title="Kontener NexOS — chroniony przed zmianami z UI">nexos</span>;
   }
   const actions = compact ? availableActions(c).filter((a) => a !== "kill" && a !== "pause" && a !== "remove") : availableActions(c);
   const trigger = (a: ContainerAction | "remove") => (confirmText[a] || a === "remove" ? setConfirm(a) : run.mutate(a));
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className={`flex items-center gap-1.5 ${compact ? "justify-end" : "flex-wrap"}`}>
       {actions.map((a) => (
         <button
           key={a}
-          className={`btn ${compact ? "!px-2 !py-0.5 !text-[10px]" : ""} ${a === "remove" || a === "kill" ? "btn-danger" : ""}`}
+          className={`btn ${compact ? "btn-sm" : ""} ${a === "remove" || a === "kill" ? "btn-danger" : ""}`}
           disabled={run.isPending}
           onClick={(e) => {
             e.preventDefault();
@@ -124,11 +124,11 @@ export function ContainerActions({
             {confirm === "remove" && (
               <div className="space-y-2 text-sm">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" className="accent-amber" checked={removeOpts.force} onChange={(e) => setRemoveOpts({ ...removeOpts, force: e.target.checked })} />
+                  <input type="checkbox" className="accent-accent" checked={removeOpts.force} onChange={(e) => setRemoveOpts({ ...removeOpts, force: e.target.checked })} />
                   wymuś (zatrzymaj, jeśli działa)
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" className="accent-amber" checked={removeOpts.volumes} onChange={(e) => setRemoveOpts({ ...removeOpts, volumes: e.target.checked })} />
+                  <input type="checkbox" className="accent-accent" checked={removeOpts.volumes} onChange={(e) => setRemoveOpts({ ...removeOpts, volumes: e.target.checked })} />
                   usuń też anonimowe wolumeny
                 </label>
               </div>
@@ -136,10 +136,10 @@ export function ContainerActions({
             <ErrorText error={run.error} />
             <div className="flex justify-end gap-2">
               <button className="btn" onClick={() => setConfirm(null)}>
-                anuluj
+                Anuluj
               </button>
               <button className={`btn ${confirm === "remove" || confirm === "kill" ? "btn-danger" : "btn-primary"}`} onClick={() => run.mutate(confirm)} disabled={run.isPending}>
-                {run.isPending ? "wykonywanie…" : actionLabels[confirm]}
+                {run.isPending ? "Wykonywanie…" : actionLabels[confirm]}
               </button>
             </div>
           </div>

@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api, wsUrl } from "../lib/api";
 import { useJsonSocket } from "../lib/ws";
 import { bytes, pct, rate } from "../lib/format";
-import type { Container, ContainerStats, ImageUpdateInfo, Me, StatsMessage } from "../lib/types";
+import type { Container, ContainerStats, DiskUsage, ImageUpdateInfo, Me, StatsMessage } from "../lib/types";
+import { storageOf, useDiskUsage } from "../components/storage";
 import { UpdateBadge, useHostUpdates } from "../components/updates";
 import { ErrorText } from "../components/ui";
 import { ContainerActions, exitedWithError, portsText, StateBadge } from "../components/containers";
@@ -31,6 +32,7 @@ export function ContainersPage({ me }: { me: Me }) {
   });
 
   const upd = useHostUpdates(id);
+  const du = useDiskUsage(id, online);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const canOperate = me.user.role !== "viewer";
@@ -82,16 +84,16 @@ export function ContainersPage({ me }: { me: Me }) {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex border border-rule">
+            <div className="tabs" role="tablist">
               {(
                 [
-                  ["all", "wszystkie"],
-                  ["running", "działające"],
-                  ["stopped", "zatrzymane"],
-                  ["problems", "problemy"],
+                  ["all", "Wszystkie"],
+                  ["running", "Działające"],
+                  ["stopped", "Zatrzymane"],
+                  ["problems", "Problemy"],
                 ] as [Filter, string][]
               ).map(([f, l]) => (
-                <button key={f} onClick={() => setFilter(f)} className={`label px-3 py-1.5 ${f === filter ? "bg-amber !text-chassis" : "hover:!text-ink"}`}>
+                <button key={f} onClick={() => setFilter(f)} role="tab" aria-selected={f === filter} className="tab">
                   {l}
                 </button>
               ))}
@@ -105,18 +107,16 @@ export function ContainersPage({ me }: { me: Me }) {
             {groups.map(([project, list], gi) => (
               <section key={project || "_"} className="panel rise" style={{ animationDelay: `${gi * 40}ms` }}>
                 <div className="flex items-center justify-between border-b border-rule px-4 py-2">
-                  <h2 className="label !text-ink-2">
+                  <h2 className="text-[1.0625rem] font-semibold tracking-[-0.012em] first-letter:uppercase">
                     {project ? (
                       <>
-                        <span className="text-amber">◆</span> {project}
+                        <span className="text-ink-3">◆</span> {project}
                       </>
                     ) : (
                       "pojedyncze kontenery"
                     )}
                   </h2>
-                  <span className="readout text-xs text-ink-3">
-                    {list.filter((c) => c.state === "running").length}/{list.length}
-                  </span>
+                  <GroupSummary list={list} stats={stats} du={du.data} />
                 </div>
                 <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-sm">
@@ -137,6 +137,26 @@ export function ContainersPage({ me }: { me: Me }) {
   );
 }
 
+/** Group header readouts: live traffic, measured storage, running count. */
+function GroupSummary({ list, stats, du }: { list: Container[]; stats: Record<string, ContainerStats>; du?: DiskUsage }) {
+  const running = list.filter((c) => c.state === "running");
+  const rx = running.reduce((a, c) => a + (stats[c.id]?.network_rx_bytes_per_second ?? 0), 0);
+  const tx = running.reduce((a, c) => a + (stats[c.id]?.network_tx_bytes_per_second ?? 0), 0);
+  return (
+    <span className="readout flex items-center gap-4 text-xs text-ink-3">
+      {running.length > 0 && (
+        <span className="hidden sm:inline" title="Ruch sieciowy teraz">
+          <span className="text-cyan">↓ {rate(rx)}</span> <span className="text-violet">↑ {rate(tx)}</span>
+        </span>
+      )}
+      {du?.computed_unix ? <span title="Wolumeny, katalogi hosta i warstwy kontenerów">{bytes(storageOf(list, du).total)}</span> : null}
+      <span>
+        {running.length}/{list.length}
+      </span>
+    </span>
+  );
+}
+
 function Row({ hostId, c, s, canOperate, update }: { hostId: string; c: Container; s?: ContainerStats; canOperate: boolean; update?: ImageUpdateInfo }) {
   const ports = portsText(c);
   const running = c.state === "running";
@@ -145,7 +165,7 @@ function Row({ hostId, c, s, canOperate, update }: { hostId: string; c: Containe
       <td className="w-[26%] px-4 py-2.5">
         <Link to="/hosts/$id/containers/$cid" params={{ id: hostId, cid: c.id }} className="block min-w-0">
           <div className="flex items-center gap-2">
-            <span className="truncate font-medium group-hover:text-amber">{c.name}</span>
+            <span className="truncate font-medium group-hover:text-accent">{c.name}</span>
             <UpdateBadge u={update} />
           </div>
           <div className="readout truncate text-[11px] text-ink-3">{c.image}</div>
@@ -158,7 +178,7 @@ function Row({ hostId, c, s, canOperate, update }: { hostId: string; c: Containe
       <td className="w-[14%] px-3 py-2.5">
         <div className="flex flex-wrap gap-1">
           {ports.slice(0, 3).map((p) => (
-            <span key={p} className="readout border border-rule px-1.5 text-[11px] text-ink-2">
+            <span key={p} className="readout rounded-md border border-rule px-1.5 text-[11px] text-ink-2">
               {p}
             </span>
           ))}
@@ -169,8 +189,8 @@ function Row({ hostId, c, s, canOperate, update }: { hostId: string; c: Containe
         {running && s ? (
           <>
             <div className="readout text-xs">{pct(s.cpu_percent)}</div>
-            <div className="mt-1 h-1 bg-rule">
-              <div className="h-full bg-amber transition-[width] duration-500" style={{ width: `${Math.min(s.cpu_percent ?? 0, 100)}%` }} />
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-rule">
+              <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${Math.min(s.cpu_percent ?? 0, 100)}%` }} />
             </div>
           </>
         ) : (
@@ -182,9 +202,9 @@ function Row({ hostId, c, s, canOperate, update }: { hostId: string; c: Containe
       </td>
       <td className="w-[11%] px-3 py-2.5">
         {running && s ? (
-          <div className="readout text-[11px] leading-tight">
+          <div className="readout text-[11px] leading-tight whitespace-nowrap">
             <div className="text-cyan">↓ {rate(s.network_rx_bytes_per_second)}</div>
-            <div className="text-amber">↑ {rate(s.network_tx_bytes_per_second)}</div>
+            <div className="text-violet">↑ {rate(s.network_tx_bytes_per_second)}</div>
           </div>
         ) : (
           <span className="text-ink-3">—</span>

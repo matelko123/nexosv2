@@ -68,6 +68,32 @@ func (s *Server) handleContainerHistory(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, listOrEmpty(pts))
 }
 
+// handleContainersHistory sums the history of several containers given as
+// ?names=a,b,c — the stack view uses it for the services of one project.
+func (s *Server) handleContainersHistory(w http.ResponseWriter, r *http.Request) {
+	var names []string
+	for _, n := range strings.Split(r.URL.Query().Get("names"), ",") {
+		if n == "" {
+			continue
+		}
+		if !containerIDPattern.MatchString(n) || len(names) == 64 {
+			writeError(w, http.StatusBadRequest, "invalid names")
+			return
+		}
+		names = append(names, n)
+	}
+	rg, ok := containerRanges[r.URL.Query().Get("range")]
+	if !ok {
+		rg = containerRanges["24h"]
+	}
+	res, err := s.store.ContainerMetricsSum(r.Context(), chi.URLParam(r, "id"), names, time.Now().Add(-rg.window), rg.bucket.Milliseconds())
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
 // ---- image updates ----
 
 func (s *Server) handleListUpdates(w http.ResponseWriter, r *http.Request) {

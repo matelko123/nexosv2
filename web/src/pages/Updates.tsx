@@ -21,13 +21,13 @@ export function UpdateBanner({ me }: { me: Me }) {
   const outdated = v.data.hosts.filter((h) => h.update_available).length;
   if (!v.data.hub.update_available && outdated === 0) return null;
   return (
-    <Link to="/updates" className="mb-5 flex flex-wrap items-center justify-between gap-3 border-l-2 border-cyan bg-cyan/5 px-4 py-2.5 text-sm hover:bg-cyan/10">
+    <Link to="/updates" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] bg-cyan/5 px-4 py-2.5 text-sm hover:bg-cyan/10">
       <span>
         Dostępna nowa wersja NexOS <span className="readout text-cyan">{v.data.hub.latest.version}</span>
         {v.data.hub.update_available ? ` (hub: ${v.data.hub.hub_version})` : ""}
         {outdated > 0 ? ` · ${outdated} ${outdated === 1 ? "agent do aktualizacji" : "agentów do aktualizacji"}` : ""}
       </span>
-      <span className="label !text-cyan">szczegóły →</span>
+      <span className="text-sm font-medium text-accent">Szczegóły ›</span>
     </Link>
   );
 }
@@ -91,18 +91,18 @@ export function UpdatesPage({ me }: { me: Me }) {
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label">05 / system</div>
-          <h1 className="font-display text-2xl font-semibold tracking-wider">Aktualizacje NexOS</h1>
+          <div className="label">system</div>
+          <h1 className="title">Aktualizacje NexOS</h1>
         </div>
         {isAdmin && (
           <button className="btn" disabled={check.isPending} onClick={() => check.mutate()}>
-            {check.isPending ? "sprawdzanie…" : "sprawdź teraz"}
+            {check.isPending ? "Sprawdzanie…" : "Sprawdź teraz"}
           </button>
         )}
       </header>
       <ErrorText error={v.error ?? check.error} />
       {d?.hub.error && <ErrorText error={`Ostatnie sprawdzenie: ${d.hub.error}`} />}
-      {waiting && <div className="border-l-2 border-warn bg-warn/10 px-4 py-2.5 text-sm text-warn">{waiting}</div>}
+      {waiting && <div className="rounded-[var(--radius-control)] bg-warn/10 px-4 py-2.5 text-sm text-warn">{waiting}</div>}
       {run && <OutputConsole run={run} onClose={run.running ? undefined : clear} />}
 
       {d && (
@@ -125,7 +125,7 @@ export function UpdatesPage({ me }: { me: Me }) {
               </div>
               {isAdmin && latest && d.hub.update_available && (
                 <button className="btn btn-primary w-full" disabled={run?.running || !!waiting || !d.hub_host_id} onClick={() => setConfirm({ kind: "hub" })}>
-                  aktualizuj hub do {latest.version}
+                  Aktualizuj hub do {latest.version}
                 </button>
               )}
               {isAdmin && d.hub.update_available && !d.hub_host_id && (
@@ -148,18 +148,18 @@ export function UpdatesPage({ me }: { me: Me }) {
                   <tr key={h.id}>
                     <td className="px-4 py-2">
                       {h.name}
-                      {h.runs_hub && <span className="label ml-2 !text-amber">hub</span>}
+                      {h.runs_hub && <span className="label ml-2 !text-accent">hub</span>}
                       {h.status !== "online" && <span className="label ml-2">{h.status}</span>}
                     </td>
                     <td className={`readout px-4 py-2 text-xs ${h.update_available ? "text-cyan" : ""}`}>{h.agent_version ?? "—"}</td>
                     <td className="px-4 py-2 text-right">
                       {isAdmin && h.update_available && (
                         <button
-                          className="btn !px-2 !py-0.5 !text-[10px]"
+                          className="btn btn-sm"
                           disabled={run?.running || h.status !== "online"}
                           onClick={() => setConfirm({ kind: "agent", id: h.id, name: h.name })}
                         >
-                          aktualizuj
+                          Aktualizuj
                         </button>
                       )}
                     </td>
@@ -172,7 +172,7 @@ export function UpdatesPage({ me }: { me: Me }) {
           <section className="panel rise" style={{ animationDelay: "60ms" }}>
             <PanelHeader title={latest ? `Co nowego w ${latest.name || latest.version}` : "Informacje o wydaniu"}>
               {latest?.url && (
-                <a href={latest.url} target="_blank" rel="noreferrer noopener" className="label hover:!text-amber">
+                <a href={latest.url} target="_blank" rel="noreferrer noopener" className="label hover:!text-accent">
                   github ↗
                 </a>
               )}

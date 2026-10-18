@@ -11,21 +11,22 @@ const SHELLS = [
   { label: "/bin/ash", cmd: "/bin/ash" },
 ];
 
+// Terminal stays dark in both appearances, like Terminal.app's default profile.
 const theme = {
-  background: "#0b0c0d",
-  foreground: "#e6e1d6",
-  cursor: "#ffb000",
-  cursorAccent: "#0b0c0d",
-  selectionBackground: "#ffb00055",
-  black: "#181b1e",
-  red: "#ff5a4e",
-  green: "#4ade80",
-  yellow: "#ffd166",
-  blue: "#5ccfe6",
-  magenta: "#d7a6ff",
-  cyan: "#5ccfe6",
-  white: "#e6e1d6",
-  brightBlack: "#6b675f",
+  background: "#1c1c1e",
+  foreground: "#f5f5f7",
+  cursor: "#f5f5f7",
+  cursorAccent: "#1c1c1e",
+  selectionBackground: "#0a84ff66",
+  black: "#2c2c2e",
+  red: "#ff453a",
+  green: "#30d158",
+  yellow: "#ffd60a",
+  blue: "#0a84ff",
+  magenta: "#bf5af2",
+  cyan: "#64d2ff",
+  white: "#f5f5f7",
+  brightBlack: "#8e8e93",
 };
 
 /** Interactive shell in a container over the hub exec WebSocket. */
@@ -39,7 +40,7 @@ export function ContainerTerminal({ hostId, containerId, name, running }: { host
 
   useEffect(() => {
     if (session === 0 || !host.current) return;
-    const term = new XTerm({ theme, fontFamily: "IBM Plex Mono, monospace", fontSize: 13, cursorBlink: true, scrollback: 5000 });
+    const term = new XTerm({ theme, fontFamily: 'ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace', fontSize: 13, cursorBlink: true, scrollback: 5000 });
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.open(host.current);
@@ -97,19 +98,19 @@ export function ContainerTerminal({ hostId, containerId, name, running }: { host
           użytkownik
           <input className="field readout !w-28 !py-1 text-xs" placeholder="domyślny" value={user} onChange={(e) => setUser(e.target.value)} />
         </label>
-        <button className="btn btn-primary !px-3 !py-1 !text-[10px]" disabled={!running || state === "connecting"} onClick={() => setSession((s) => s + 1)}>
-          {state === "open" ? "nowa sesja" : "połącz"}
+        <button className="btn btn-primary btn-sm" disabled={!running || state === "connecting"} onClick={() => setSession((s) => s + 1)}>
+          {state === "open" ? "Nowa sesja" : "Połącz"}
         </button>
         <span className="label ml-auto">
           {state === "open" ? <span className="text-signal">sesja aktywna · zapisana w audycie</span> : state === "closed" ? "rozłączono" : !running ? "kontener nie działa" : ""}
         </span>
       </div>
-      <div className="relative flex-1 bg-chassis p-2">
+      <div className="relative flex-1 bg-[#1c1c1e] p-2 [color-scheme:dark]">
         {session === 0 && (
           <div className="absolute inset-0 grid place-items-center text-center">
             <div>
-              <div className="font-display tracking-wider text-ink-2">Konsola · {name}</div>
-              <p className="mt-1 text-sm text-ink-3">Sesja uruchamia proces w kontenerze przez Docker exec. Każde połączenie jest odnotowywane w audycie.</p>
+              <div className="text-[1.0625rem] font-semibold text-[#f5f5f7]">Konsola · {name}</div>
+              <p className="mt-1 text-sm text-[#8e8e93]">Sesja uruchamia proces w kontenerze przez Docker exec. Każde połączenie jest odnotowywane w audycie.</p>
             </div>
           </div>
         )}

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { resources } from "../lib/api";
+import { api, resources } from "../lib/api";
+import { bytes, rate } from "../lib/format";
+import { storageOf, useDiskUsage } from "../components/storage";
+import { sumStats, useContainerStats } from "./StackResources";
 import { useRun } from "../lib/useRun";
 import type { Me, Stack, StackOperation } from "../lib/types";
 import { ErrorText, Field, Modal } from "../components/ui";
@@ -29,7 +32,7 @@ export function StackStatus({ s }: { s: Stack }) {
   const st = statusStyle[s.status] ?? statusStyle.empty;
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-      <span className={`inline-block size-2 rounded-full ${s.status === "running" ? "lamp-on" : ""}`} style={{ background: st.color, color: st.color }} />
+      <span className={`inline-block size-2 rounded-full ${s.status === "running" ? "" : ""}`} style={{ background: st.color, color: st.color }} />
       <span className="label" style={{ color: st.color }}>
         {st.label}
       </span>
@@ -54,6 +57,11 @@ export function StacksPage({ me }: { me: Me }) {
 function StacksList({ hostId, me }: { hostId: string; me: Me }) {
   const qc = useQueryClient();
   const stacks = useQuery({ queryKey: ["stacks", hostId], queryFn: () => resources.stacks(hostId), refetchInterval: 30_000 });
+  const containers = useQuery({ queryKey: ["containers", hostId], queryFn: () => api.containers(hostId), refetchInterval: 30_000 });
+  const stats = useContainerStats(hostId);
+  const du = useDiskUsage(hostId);
+  const measured = !!du.data?.computed_unix;
+  const membersOf = (name: string) => (containers.data ?? []).filter((c) => c.compose_project === name);
   const [creating, setCreating] = useState(false);
   const { run, start, clear } = useRun();
   const canOperate = me.user.role !== "viewer";
@@ -69,30 +77,46 @@ function StacksList({ hostId, me }: { hostId: string; me: Me }) {
   const table = (list: Stack[], title: string, hint: string) => (
     <section className="panel rise">
       <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2.5">
-        <h2 className="label !text-ink-2">{title}</h2>
+        <h2 className="text-[1.0625rem] font-semibold tracking-[-0.012em] first-letter:uppercase">{title}</h2>
         <span className="text-xs text-ink-3">{hint}</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr>
               <Th>nazwa</Th>
               <Th>status</Th>
+              <Th>na dysku</Th>
+              <Th>sieć teraz</Th>
               <Th>katalog</Th>
               <Th />
             </tr>
           </thead>
           <tbody className="divide-y divide-rule">
-            {list.map((s) => (
+            {list.map((s) => {
+              const members = membersOf(s.name);
+              const running = members.filter((c) => c.state === "running");
+              return (
               <tr key={s.name} className="group hover:bg-panel-2">
                 <td className="px-4 py-2.5">
-                  <Link to="/hosts/$id/stacks/$name" params={{ id: hostId, name: s.name }} className="font-medium group-hover:text-amber">
+                  <Link to="/hosts/$id/stacks/$name" params={{ id: hostId, name: s.name }} className="font-medium group-hover:text-accent">
                     {s.name}
                   </Link>
-                  {s.protected && <span className="label ml-2 border border-rule px-1.5 !text-amber-dim">nexos</span>}
+                  {s.protected && <span className="label ml-2 rounded-md border border-rule px-1.5 !text-accent-dim">nexos</span>}
                 </td>
                 <td className="px-4 py-2.5">
                   <StackStatus s={s} />
+                </td>
+                <td className="readout px-4 py-2.5 text-xs">{members.length ? (measured ? bytes(storageOf(members, du.data).total) : "…") : "—"}</td>
+                <td className="readout px-4 py-2.5 text-[11px] leading-tight whitespace-nowrap">
+                  {running.length ? (
+                    <>
+                      <div className="text-cyan">↓ {rate(sumStats(running, stats, (x) => x.network_rx_bytes_per_second))}</div>
+                      <div className="text-violet">↑ {rate(sumStats(running, stats, (x) => x.network_tx_bytes_per_second))}</div>
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="readout max-w-[320px] truncate px-4 py-2.5 text-xs text-ink-3" title={s.working_dir}>
                   {s.working_dir || "—"}
@@ -101,28 +125,29 @@ function StacksList({ hostId, me }: { hostId: string; me: Me }) {
                   {canOperate && !s.protected && (
                     <div className="flex justify-end gap-1.5">
                       {s.managed && s.status !== "running" && (
-                        <button className="btn !px-2 !py-0.5 !text-[10px]" disabled={run?.running} onClick={() => op(s, "up")}>
-                          up
+                        <button className="btn btn-sm" disabled={run?.running} onClick={() => op(s, "up")}>
+                          Up
                         </button>
                       )}
                       {s.status !== "empty" && s.status !== "stopped" && (
-                        <button className="btn !px-2 !py-0.5 !text-[10px]" disabled={run?.running} onClick={() => op(s, "restart")}>
-                          restart
+                        <button className="btn btn-sm" disabled={run?.running} onClick={() => op(s, "restart")}>
+                          Restart
                         </button>
                       )}
                       {!s.managed && s.status === "stopped" && (
-                        <button className="btn !px-2 !py-0.5 !text-[10px]" disabled={run?.running} onClick={() => op(s, "start")}>
-                          start
+                        <button className="btn btn-sm" disabled={run?.running} onClick={() => op(s, "start")}>
+                          Start
                         </button>
                       )}
                     </div>
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {list.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-sm text-ink-3">
+                <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-3">
                   brak
                 </td>
               </tr>
@@ -142,7 +167,7 @@ function StacksList({ hostId, me }: { hostId: string; me: Me }) {
         </p>
         {me.user.role === "admin" && (
           <button className="btn btn-primary" onClick={() => setCreating(true)}>
-            + nowy stack
+            Nowy stack
           </button>
         )}
       </Toolbar>
@@ -186,10 +211,10 @@ function NewStackModal({ hostId, onClose }: { hostId: string; onClose: () => voi
         <ErrorText error={create.error} />
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>
-            anuluj
+            Anuluj
           </button>
           <button className="btn btn-primary" disabled={create.isPending}>
-            utwórz
+            Utwórz
           </button>
         </div>
       </form>

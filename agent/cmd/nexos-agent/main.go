@@ -153,7 +153,11 @@ func run() error {
 	if fs := hf.Features(); len(fs) > 0 {
 		slog.Info("host features enabled", "features", fs)
 	}
-	gs := server.New(id, dc, sm, hf).GRPCServer()
+	var du *docker.DiskUsage
+	if dc != nil {
+		du = docker.NewDiskUsage(dc, os.Getenv("NEXOS_HOST_ROOT"))
+	}
+	gs := server.New(id, dc, sm, hf, du).GRPCServer()
 
 	var ln net.Listener
 	// The WireGuard interface may come up after the container; retry binding.

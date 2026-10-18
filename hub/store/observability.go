@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -153,6 +154,57 @@ func (s *Store) ContainerMetrics(ctx context.Context, agentID, name string, sinc
 		}
 		p.Mem, p.MemLimit = uint64(mem), uint64(limit)
 		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ContainerTotals is the summed history of several containers, e.g. the
+// services of one compose project.
+type ContainerTotals struct {
+	Points []ContainerPoint `json:"points"`
+	// Bytes transferred in the window: rows are per-minute average rates.
+	RxBytes float64 `json:"rx_bytes"`
+	TxBytes float64 `json:"tx_bytes"`
+}
+
+// ContainerMetricsSum adds up the per-bucket averages of the named containers.
+func (s *Store) ContainerMetricsSum(ctx context.Context, agentID string, names []string, since time.Time, bucketMs int64) (*ContainerTotals, error) {
+	out := &ContainerTotals{Points: []ContainerPoint{}}
+	if len(names) == 0 {
+		return out, nil
+	}
+	if bucketMs < 1 {
+		bucketMs = 1
+	}
+	in := strings.TrimSuffix(strings.Repeat("?,", len(names)), ",")
+	args := []any{agentID}
+	for _, n := range names {
+		args = append(args, n)
+	}
+	args = append(args, since.UnixMilli())
+	where := `agent_id = ? AND name IN (` + in + `) AND ts >= ?`
+
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(net_rx), 0) * 60, COALESCE(SUM(net_tx), 0) * 60 FROM container_metrics WHERE `+where, args...).
+		Scan(&out.RxBytes, &out.TxBytes); err != nil {
+		return nil, err
+	}
+	// Average each container within a bucket first, then sum across containers.
+	rows, err := s.db.QueryContext(ctx, `SELECT b, SUM(cpu), SUM(mem), SUM(mem_limit), SUM(net_rx), SUM(net_tx) FROM (
+			SELECT name, (ts / ?) * ? AS b, AVG(cpu) AS cpu, AVG(mem) AS mem, MAX(mem_limit) AS mem_limit, AVG(net_rx) AS net_rx, AVG(net_tx) AS net_tx
+			FROM container_metrics WHERE `+where+` GROUP BY name, b
+		) GROUP BY b ORDER BY b`, append([]any{bucketMs, bucketMs}, args...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p ContainerPoint
+		var mem, limit float64
+		if err := rows.Scan(&p.TS, &p.CPU, &mem, &limit, &p.NetRx, &p.NetTx); err != nil {
+			return nil, err
+		}
+		p.Mem, p.MemLimit = uint64(mem), uint64(limit)
+		out.Points = append(out.Points, p)
 	}
 	return out, rows.Err()
 }

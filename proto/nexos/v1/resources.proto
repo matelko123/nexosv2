@@ -180,6 +180,10 @@ service VolumeService {
   rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse);
   rpc RemoveVolume(RemoveVolumeRequest) returns (RemoveVolumeResponse);
   rpc PruneVolumes(PruneVolumesRequest) returns (PruneVolumesResponse);
+  // GetDiskUsage reports space taken by volumes, bind-mounted host paths and
+  // container writable layers. Sizes are computed in the background and
+  // cached; while the first pass runs, the response has computing = true.
+  rpc GetDiskUsage(GetDiskUsageRequest) returns (GetDiskUsageResponse);
 }
 
 message Volume {
@@ -232,6 +236,47 @@ message RemoveVolumeResponse {}
 message PruneVolumesRequest {
   // false: only anonymous volumes; true: also unused named volumes.
   bool all = 1;
+}
+
+message GetDiskUsageRequest {
+  // Start a new pass even if the cached result is still fresh. Passes are
+  // rate-limited by the agent.
+  bool refresh = 1;
+}
+
+message VolumeUsage {
+  string name = 1;
+  // -1 when the driver does not report a size.
+  int64 size_bytes = 2;
+}
+
+message BindUsage {
+  // Host path as seen by Docker.
+  string source = 1;
+  int64 size_bytes = 2;
+  // The walk stopped before finishing (time budget); size is a lower bound.
+  bool partial = 3;
+  // Set when the path could not be measured (e.g. a system path).
+  string error = 4;
+}
+
+message ContainerDiskUsage {
+  string id = 1;
+  // Writable layer only.
+  int64 size_rw_bytes = 2;
+  // Writable layer plus the image.
+  int64 size_root_fs_bytes = 3;
+}
+
+message GetDiskUsageResponse {
+  repeated VolumeUsage volumes = 1;
+  repeated BindUsage binds = 2;
+  repeated ContainerDiskUsage containers = 3;
+  // When the returned data was computed; 0 if no pass has finished yet.
+  int64 computed_unix = 4;
+  // A pass is running; poll again for fresher data.
+  bool computing = 5;
+  string error = 6;
 }
 
 message PruneImagesResponse {

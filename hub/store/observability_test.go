@@ -77,3 +77,41 @@ func TestDefaultAlertRulesSeeded(t *testing.T) {
 		t.Fatalf("seeded rules: %d %v", len(rules), err)
 	}
 }
+
+func TestContainerMetricsSum(t *testing.T) {
+	st, err := Open(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	if err := st.CreateAgent(ctx, &Agent{ID: "abcdefgh12", Name: "a", Address: "x:1"}); err != nil {
+		t.Fatal(err)
+	}
+	m := time.Now().Truncate(time.Hour).Add(-30 * time.Minute)
+	// Two services of a stack over two minutes, plus a container outside it.
+	if err := st.InsertContainerMetrics(ctx, "abcdefgh12", []ContainerPoint{
+		{Name: "app", TS: m.UnixMilli(), CPU: 10, Mem: 100, NetRx: 1000, NetTx: 10},
+		{Name: "app", TS: m.Add(time.Minute).UnixMilli(), CPU: 30, Mem: 300, NetRx: 3000, NetTx: 30},
+		{Name: "db", TS: m.UnixMilli(), CPU: 5, Mem: 50, NetRx: 100, NetTx: 1},
+		{Name: "other", TS: m.UnixMilli(), CPU: 99, Mem: 999, NetRx: 9999, NetTx: 99},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	res, err := st.ContainerMetricsSum(ctx, "abcdefgh12", []string{"app", "db"}, m.Add(-time.Hour), (5 * time.Minute).Milliseconds())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One 5-minute bucket: app averages to cpu 20 / mem 200 / rx 2000, plus db.
+	if len(res.Points) != 1 || res.Points[0].CPU != 25 || res.Points[0].Mem != 250 || res.Points[0].NetRx != 2100 {
+		t.Fatalf("points: %+v", res.Points)
+	}
+	// Per-minute rates × 60 s: (1000 + 3000 + 100) × 60.
+	if res.RxBytes != 4100*60 || res.TxBytes != 41*60 {
+		t.Fatalf("totals: rx %v tx %v", res.RxBytes, res.TxBytes)
+	}
+	empty, err := st.ContainerMetricsSum(ctx, "abcdefgh12", nil, m, 1)
+	if err != nil || len(empty.Points) != 0 {
+		t.Fatalf("empty: %+v %v", empty, err)
+	}
+}

@@ -178,6 +178,13 @@ func (x *volumeService) ListVolumes(ctx context.Context, _ *nexosv1.ListVolumesR
 	return &nexosv1.ListVolumesResponse{Volumes: list}, nil
 }
 
+func (x *volumeService) GetDiskUsage(ctx context.Context, req *nexosv1.GetDiskUsageRequest) (*nexosv1.GetDiskUsageResponse, error) {
+	if err := x.s.requireDocker(); err != nil {
+		return nil, err
+	}
+	return x.s.du.Get(ctx, req.GetRefresh()), nil
+}
+
 func (x *volumeService) InspectVolume(ctx context.Context, req *nexosv1.InspectVolumeRequest) (*nexosv1.InspectVolumeResponse, error) {
 	if err := x.s.requireDocker(); err != nil {
 		return nil, err

@@ -28,10 +28,11 @@ type Server struct {
 	docker *docker.Client
 	stacks *stacks.Manager
 	host   *host.Host
+	du     *docker.DiskUsage
 }
 
-func New(id *identity.Identity, dc *docker.Client, sm *stacks.Manager, h *host.Host) *Server {
-	return &Server{id: id, docker: dc, stacks: sm, host: h}
+func New(id *identity.Identity, dc *docker.Client, sm *stacks.Manager, h *host.Host, du *docker.DiskUsage) *Server {
+	return &Server{id: id, docker: dc, stacks: sm, host: h, du: du}
 }
 
 // GRPCServer builds the mTLS gRPC server with all services registered.

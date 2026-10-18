@@ -39,11 +39,11 @@ export function UsersPage({ me }: { me: Me }) {
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label">04 / dostęp</div>
-          <h1 className="font-display text-2xl font-semibold tracking-wider">Użytkownicy</h1>
+          <div className="label">dostęp</div>
+          <h1 className="title">Użytkownicy</h1>
         </div>
         <button className="btn btn-primary" onClick={() => setCreating(true)}>
-          + zaproś użytkownika
+          Zaproś użytkownika
         </button>
       </header>
       <ErrorText error={users.error ?? setRole.error} />
@@ -67,7 +67,7 @@ export function UsersPage({ me }: { me: Me }) {
                 <tr key={u.id} className="hover:bg-panel-2">
                   <td className="px-4 py-2.5">
                     <span className="font-medium">{u.username}</span>
-                    {self && <span className="label ml-2 !text-amber">ty</span>}
+                    {self && <span className="label ml-2 !text-accent">ty</span>}
                     {u.pending && <span className="label ml-2 !text-warn">oczekuje na aktywację</span>}
                   </td>
                   <td className="px-4 py-2.5">
@@ -88,15 +88,15 @@ export function UsersPage({ me }: { me: Me }) {
                     {!self && (
                       <div className="flex justify-end gap-1.5">
                         {u.sessions > 0 && (
-                          <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setConfirm({ kind: "sessions", u })}>
-                            wyloguj
+                          <button className="btn btn-sm" onClick={() => setConfirm({ kind: "sessions", u })}>
+                            Wyloguj
                           </button>
                         )}
-                        <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setConfirm({ kind: "reset", u })}>
-                          {u.pending ? "nowe zaproszenie" : "resetuj dostęp"}
+                        <button className="btn btn-sm" onClick={() => setConfirm({ kind: "reset", u })}>
+                          {u.pending ? "Nowe zaproszenie" : "Resetuj dostęp"}
                         </button>
-                        <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" onClick={() => setConfirm({ kind: "delete", u })}>
-                          usuń
+                        <button className="btn btn-danger btn-sm" onClick={() => setConfirm({ kind: "delete", u })}>
+                          Usuń
                         </button>
                       </div>
                     )}
@@ -112,7 +112,7 @@ export function UsersPage({ me }: { me: Me }) {
         <div className="label mb-2">role</div>
         {(Object.keys(roleInfo) as Role[]).map((r) => (
           <div key={r} className="flex gap-3">
-            <span className="readout w-20 text-amber">{r}</span>
+            <span className="readout w-20 text-accent">{r}</span>
             <span className="text-ink-2">{roleInfo[r]}</span>
           </div>
         ))}
@@ -133,7 +133,7 @@ export function UsersPage({ me }: { me: Me }) {
           <div className="space-y-4">
             <p className="text-sm text-ink-2">
               Przekaż ten link osobie zapraszanej bezpiecznym kanałem. Link jest jednorazowy, ważny do{" "}
-              <span className="readout text-amber">{dateTime(invite.expires)}</span>. Hasło i drugi składnik ustawi sama — nie poznasz ich.
+              <span className="readout font-medium text-ink">{dateTime(invite.expires)}</span>. Hasło i drugi składnik ustawi sama — nie poznasz ich.
             </p>
             <CopyBox value={inviteLink(invite.token)} rows={2} />
           </div>
@@ -187,9 +187,9 @@ function CreateUser({ onClose, onCreated }: { onClose: () => void; onCreated: (u
           <div className="space-y-2 pt-1">
             {(Object.keys(roleInfo) as Role[]).map((r) => (
               <label key={r} className="flex items-start gap-2 text-sm">
-                <input type="radio" name="role" className="mt-1 accent-amber" checked={role === r} onChange={() => setRole(r)} />
+                <input type="radio" name="role" className="mt-1 accent-accent" checked={role === r} onChange={() => setRole(r)} />
                 <span>
-                  <span className="readout text-amber">{r}</span> <span className="text-ink-2">— {roleInfo[r]}</span>
+                  <span className="readout text-accent">{r}</span> <span className="text-ink-2">— {roleInfo[r]}</span>
                 </span>
               </label>
             ))}
@@ -198,10 +198,10 @@ function CreateUser({ onClose, onCreated }: { onClose: () => void; onCreated: (u
         <ErrorText error={create.error} />
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>
-            anuluj
+            Anuluj
           </button>
           <button className="btn btn-primary" disabled={create.isPending}>
-            utwórz zaproszenie
+            Utwórz zaproszenie
           </button>
         </div>
       </form>

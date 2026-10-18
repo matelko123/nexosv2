@@ -14,7 +14,7 @@ const unix = (s?: number) => (s ? dateTime(s * 1000) : "—");
 function PruneNote({ r }: { r: PruneResult | undefined }) {
   if (!r) return null;
   return (
-    <p className="border-l-2 border-signal bg-signal/10 px-3 py-2 text-sm text-signal">
+    <p className="rounded-[var(--radius-control)] bg-signal/10 px-3 py-2 text-sm text-signal">
       Usunięto {r.deleted?.length ?? 0} {r.space_reclaimed_bytes ? `· odzyskano ${bytes(r.space_reclaimed_bytes)}` : ""}
     </p>
   );
@@ -103,7 +103,7 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
             </Field>
           </div>
           <button className="btn btn-primary" disabled={pull?.running || !ref.trim()}>
-            {pull?.running ? "pobieranie…" : "pull"}
+            {pull?.running ? "Pobieranie…" : "Pull"}
           </button>
           {pull && (
             <div className="readout basis-full space-y-1 text-xs">
@@ -112,8 +112,8 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
                   <span className="text-ink-3">{lid}</span>
                   <span className="text-ink-2">{l.status}</span>
                   {l.total ? (
-                    <div className="h-1 bg-rule">
-                      <div className="h-full bg-amber" style={{ width: `${Math.min(((l.current ?? 0) / l.total) * 100, 100)}%` }} />
+                    <div className="h-1 overflow-hidden rounded-full bg-rule">
+                      <div className="h-full bg-accent" style={{ width: `${Math.min(((l.current ?? 0) / l.total) * 100, 100)}%` }} />
                     </div>
                   ) : (
                     <span />
@@ -142,10 +142,10 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
         {isAdmin && (
           <div className="flex gap-2">
             <button className="btn" onClick={() => setPrune("dangling")}>
-              usuń wiszące
+              Usuń wiszące
             </button>
             <button className="btn btn-danger" onClick={() => setPrune("all")}>
-              usuń nieużywane
+              Usuń nieużywane
             </button>
           </div>
         )}
@@ -153,7 +153,7 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
       <PruneNote r={pruneM.data} />
       <ErrorText error={images.error} />
       {upd.available.length > 0 && (
-        <div className="panel border-l-2 !border-l-cyan p-4">
+        <div className="panel p-4 shadow-[inset_3px_0_0_var(--color-cyan),var(--card-shadow)]">
           <div className="label mb-2 !text-cyan">dostępne aktualizacje ({upd.available.length})</div>
           <ul className="space-y-1 text-sm">
             {upd.available.map((u) => (
@@ -205,8 +205,8 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
                 </td>
                 <td className="px-4 py-2 text-right">
                   {isAdmin && (
-                    <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" onClick={() => (setForce(false), setRemove(im))}>
-                      usuń
+                    <button className="btn btn-danger btn-sm" onClick={() => (setForce(false), setRemove(im))}>
+                      Usuń
                     </button>
                   )}
                 </td>
@@ -217,11 +217,11 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
       </div>
 
       {remove && (
-        <Confirm title="Usuń obraz" confirmLabel="usuń" danger pending={del.isPending} error={del.error} onClose={() => setRemove(null)} onConfirm={() => del.mutate(remove)}>
+        <Confirm title="Usuń obraz" confirmLabel="Usuń" danger pending={del.isPending} error={del.error} onClose={() => setRemove(null)} onConfirm={() => del.mutate(remove)}>
           <p className="readout">{remove.repo_tags?.join(", ") || shortId(remove.id)}</p>
           {!!remove.containers && <p className="text-warn">Obraz jest używany przez {remove.containers} kontener(y) — usunięcie wymaga wymuszenia.</p>}
           <label className="flex items-center gap-2">
-            <input type="checkbox" className="accent-amber" checked={force} onChange={(e) => setForce(e.target.checked)} />
+            <input type="checkbox" className="accent-accent" checked={force} onChange={(e) => setForce(e.target.checked)} />
             wymuś (usuń wszystkie tagi)
           </label>
         </Confirm>
@@ -229,7 +229,7 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
       {prune && (
         <Confirm
           title={prune === "all" ? "Usuń wszystkie nieużywane obrazy" : "Usuń wiszące obrazy"}
-          confirmLabel="usuń"
+          confirmLabel="Usuń"
           danger
           typeToConfirm={prune === "all" ? "prune" : undefined}
           pending={pruneM.isPending}
@@ -281,10 +281,10 @@ function Networks({ hostId, me }: { hostId: string; me: Me }) {
         {isAdmin && (
           <div className="flex gap-2">
             <button className="btn" onClick={() => setPrune(true)}>
-              usuń nieużywane
+              Usuń nieużywane
             </button>
             <button className="btn btn-primary" onClick={() => setCreating(true)}>
-              + nowa sieć
+              Nowa sieć
             </button>
           </div>
         )}
@@ -325,12 +325,12 @@ function Networks({ hostId, me }: { hostId: string; me: Me }) {
 
       {creating && <CreateNetwork hostId={hostId} onClose={() => setCreating(false)} />}
       {remove && (
-        <Confirm title="Usuń sieć" confirmLabel="usuń" danger pending={del.isPending} error={del.error} onClose={() => setRemove(null)} onConfirm={() => del.mutate(remove)}>
+        <Confirm title="Usuń sieć" confirmLabel="Usuń" danger pending={del.isPending} error={del.error} onClose={() => setRemove(null)} onConfirm={() => del.mutate(remove)}>
           <p className="readout">{remove.name}</p>
         </Confirm>
       )}
       {prune && (
-        <Confirm title="Usuń nieużywane sieci" confirmLabel="usuń" danger pending={pruneM.isPending} error={pruneM.error} onClose={() => setPrune(false)} onConfirm={() => pruneM.mutate()}>
+        <Confirm title="Usuń nieużywane sieci" confirmLabel="Usuń" danger pending={pruneM.isPending} error={pruneM.error} onClose={() => setPrune(false)} onConfirm={() => pruneM.mutate()}>
           <p>Usunę wszystkie sieci użytkownika, do których nie jest podłączony żaden kontener. Zatrzymane stacki compose odtworzą swoje sieci przy „up”.</p>
         </Confirm>
       )}
@@ -386,7 +386,7 @@ function NetworkRow({
         <td className="px-4 py-2">
           <div className="flex flex-wrap gap-1">
             {flags.map((f) => (
-              <span key={String(f)} className="label border border-rule px-1.5">
+              <span key={String(f)} className="label rounded-md border border-rule px-1.5">
                 {f}
               </span>
             ))}
@@ -394,8 +394,8 @@ function NetworkRow({
         </td>
         <td className="px-4 py-2 text-right" onClick={(e) => e.stopPropagation()}>
           {isAdmin && !n.builtin && (
-            <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" disabled={eps.length > 0} title={eps.length ? "Najpierw odłącz kontenery" : ""} onClick={onRemove}>
-              usuń
+            <button className="btn btn-danger btn-sm" disabled={eps.length > 0} title={eps.length ? "Najpierw odłącz kontenery" : ""} onClick={onRemove}>
+              Usuń
             </button>
           )}
         </td>
@@ -415,8 +415,8 @@ function NetworkRow({
                     <td className="py-1.5 pr-4 text-ink-3">{e.mac}</td>
                     <td className="py-1.5 text-right">
                       {canOperate && !n.builtin && (
-                        <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => onDisconnect(e.container_id!)}>
-                          odłącz
+                        <button className="btn btn-sm" onClick={() => onDisconnect(e.container_id!)}>
+                          Odłącz
                         </button>
                       )}
                     </td>
@@ -442,8 +442,8 @@ function NetworkRow({
                     ))}
                 </select>
                 <input className="field readout !w-40 !py-1 text-xs" placeholder="alias (opcjonalnie)" value={alias} onChange={(e) => setAlias(e.target.value)} />
-                <button className="btn !px-2.5 !py-1 !text-[10px]" disabled={!target || connect.isPending} onClick={() => connect.mutate()}>
-                  podłącz
+                <button className="btn btn-sm" disabled={!target || connect.isPending} onClick={() => connect.mutate()}>
+                  Podłącz
                 </button>
                 <ErrorText error={connect.error} />
               </div>
@@ -501,7 +501,7 @@ function CreateNetwork({ hostId, onClose }: { hostId: string; onClose: () => voi
             ] as const
           ).map(([k, l]) => (
             <label key={k} className="flex items-center gap-2">
-              <input type="checkbox" className="accent-amber" checked={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} />
+              <input type="checkbox" className="accent-accent" checked={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} />
               {l}
             </label>
           ))}
@@ -509,10 +509,10 @@ function CreateNetwork({ hostId, onClose }: { hostId: string; onClose: () => voi
         <ErrorText error={create.error} />
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>
-            anuluj
+            Anuluj
           </button>
           <button className="btn btn-primary" disabled={create.isPending}>
-            utwórz
+            Utwórz
           </button>
         </div>
       </form>
@@ -554,7 +554,7 @@ function Volumes({ hostId, me }: { hostId: string; me: Me }) {
         <div className="flex flex-wrap items-center gap-4">
           <Search value={q} onChange={setQ} placeholder="szukaj wolumenu lub projektu…" />
           <label className="label flex cursor-pointer items-center gap-1.5">
-            <input type="checkbox" className="accent-amber" checked={showAnon} onChange={(e) => setShowAnon(e.target.checked)} />
+            <input type="checkbox" className="accent-accent" checked={showAnon} onChange={(e) => setShowAnon(e.target.checked)} />
             anonimowe ({anonCount})
           </label>
           <span className="readout text-xs text-ink-3">
@@ -564,13 +564,13 @@ function Volumes({ hostId, me }: { hostId: string; me: Me }) {
         {isAdmin && (
           <div className="flex gap-2">
             <button className="btn" onClick={() => setPrune("anon")}>
-              usuń anonimowe nieużywane
+              Usuń anonimowe nieużywane
             </button>
             <button className="btn btn-danger" onClick={() => setPrune("all")}>
-              usuń wszystkie nieużywane
+              Usuń wszystkie nieużywane
             </button>
             <button className="btn btn-primary" onClick={() => setCreating(true)}>
-              + nowy
+              Nowy
             </button>
           </div>
         )}
@@ -606,8 +606,8 @@ function Volumes({ hostId, me }: { hostId: string; me: Me }) {
                 </td>
                 <td className="px-4 py-2 text-right">
                   {isAdmin && (
-                    <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" disabled={!!v.used_by?.length} title={v.used_by?.length ? "Wolumen jest używany" : ""} onClick={() => setRemove(v)}>
-                      usuń
+                    <button className="btn btn-danger btn-sm" disabled={!!v.used_by?.length} title={v.used_by?.length ? "Wolumen jest używany" : ""} onClick={() => setRemove(v)}>
+                      Usuń
                     </button>
                   )}
                 </td>
@@ -632,14 +632,14 @@ function Volumes({ hostId, me }: { hostId: string; me: Me }) {
             <ErrorText error={create.error} />
             <div className="flex justify-end">
               <button className="btn btn-primary" disabled={create.isPending}>
-                utwórz
+                Utwórz
               </button>
             </div>
           </form>
         </Modal>
       )}
       {remove && (
-        <Confirm title="Usuń wolumen" confirmLabel="usuń dane" danger typeToConfirm={remove.anonymous ? undefined : remove.name} pending={del.isPending} error={del.error} onClose={() => setRemove(null)} onConfirm={() => del.mutate(remove)}>
+        <Confirm title="Usuń wolumen" confirmLabel="Usuń dane" danger typeToConfirm={remove.anonymous ? undefined : remove.name} pending={del.isPending} error={del.error} onClose={() => setRemove(null)} onConfirm={() => del.mutate(remove)}>
           <p>
             Dane wolumenu <span className="readout text-ink">{remove.name}</span> zostaną <strong className="text-alarm">trwale usunięte</strong>.
           </p>
@@ -648,7 +648,7 @@ function Volumes({ hostId, me }: { hostId: string; me: Me }) {
       {prune && (
         <Confirm
           title={prune === "all" ? "Usuń wszystkie nieużywane wolumeny" : "Usuń anonimowe nieużywane wolumeny"}
-          confirmLabel="usuń dane"
+          confirmLabel="Usuń dane"
           danger
           typeToConfirm={prune === "all" ? "usuń dane" : undefined}
           pending={pruneM.isPending}

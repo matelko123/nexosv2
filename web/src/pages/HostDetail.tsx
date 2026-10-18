@@ -5,11 +5,11 @@ import { api } from "../lib/api";
 import { ago, bytes, dateTime, duration, pct, rate } from "../lib/format";
 import type { Enrollment, Host, Me } from "../lib/types";
 import { Chart } from "../components/Chart";
-import { ErrorText, Field, Modal, PanelHeader, SegmentMeter, Stat, StatusLamp } from "../components/ui";
+import { ErrorText, Field, Modal, PanelHeader, Meter, Stat, StatusLamp } from "../components/ui";
 import { EnrollInstructions } from "./Hosts";
 
 const RANGES = ["15m", "1h", "6h", "24h", "7d", "30d", "90d"] as const;
-const C = { amber: "#ffb000", cyan: "#5ccfe6", signal: "#4ade80", alarm: "#ff5a4e" };
+const C = { accent: "var(--color-accent)", cyan: "var(--color-cyan)", violet: "var(--color-violet)", signal: "var(--color-signal)", alarm: "var(--color-alarm)" };
 
 export function HostDetailPage({ me }: { me: Me }) {
   const { id } = useParams({ from: "/hosts/$id" });
@@ -27,18 +27,18 @@ export function HostDetailPage({ me }: { me: Me }) {
     const pts = series.data ?? [];
     return {
       x: pts.map((p) => p.ts / 1000),
-      cpu: [{ label: "cpu %", color: C.amber, values: pts.map((p) => p.cpu) }],
+      cpu: [{ label: "cpu %", color: C.accent, values: pts.map((p) => p.cpu) }],
       mem: [
         { label: "ram", color: C.cyan, values: pts.map((p) => p.mem_used) },
         { label: "swap", color: C.alarm, values: pts.map((p) => p.swap_used) },
       ],
       net: [
         { label: "rx ↓", color: C.cyan, values: pts.map((p) => p.net_rx) },
-        { label: "tx ↑", color: C.amber, values: pts.map((p) => p.net_tx) },
+        { label: "tx ↑", color: C.violet, values: pts.map((p) => p.net_tx) },
       ],
       disk: [
         { label: "odczyt", color: C.signal, values: pts.map((p) => p.disk_read) },
-        { label: "zapis", color: C.amber, values: pts.map((p) => p.disk_write) },
+        { label: "zapis", color: C.violet, values: pts.map((p) => p.disk_write) },
       ],
     };
   }, [series.data]);
@@ -67,9 +67,9 @@ export function HostDetailPage({ me }: { me: Me }) {
                 <div>
                   <div className="mb-1.5 flex items-baseline justify-between">
                     <span className="label">cpu</span>
-                    <span className="readout text-2xl text-amber">{pct(m?.cpu_percent)}</span>
+                    <span className="readout text-2xl text-accent">{pct(m?.cpu_percent)}</span>
                   </div>
-                  <SegmentMeter value={m?.cpu_percent ?? 0} segments={32} />
+                  <Meter value={m?.cpu_percent ?? 0} />
                   <div className="readout mt-2 text-xs text-ink-3">
                     load {m?.load1?.toFixed(2) ?? "—"} · {m?.load5?.toFixed(2) ?? "—"} · {m?.load15?.toFixed(2) ?? "—"}
                   </div>
@@ -79,7 +79,7 @@ export function HostDetailPage({ me }: { me: Me }) {
                     <span className="label">ram</span>
                     <span className="readout text-2xl text-cyan">{pct(memPct)}</span>
                   </div>
-                  <SegmentMeter value={memPct} segments={32} />
+                  <Meter value={memPct} />
                   <div className="readout mt-2 text-xs text-ink-3">
                     {bytes(m?.memory_used_bytes)} / {bytes(m?.memory_total_bytes)} · swap {bytes(m?.swap_used_bytes)}
                   </div>
@@ -88,11 +88,11 @@ export function HostDetailPage({ me }: { me: Me }) {
                   <div className="label mb-2">rdzenie</div>
                   <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(44px,1fr))]">
                     {(m?.cpu_per_core_percent ?? []).map((v, i) => (
-                      <div key={i} className="border border-rule bg-chassis p-1.5" title={`rdzeń ${i}: ${pct(v)}`}>
-                        <div className="relative h-8 bg-rule">
+                      <div key={i} className="rounded-lg bg-panel-2 p-1.5" title={`rdzeń ${i}: ${pct(v)}`}>
+                        <div className="relative h-8 overflow-hidden rounded-[4px] bg-rule">
                           <div
                             className="absolute inset-x-0 bottom-0 transition-[height] duration-500"
-                            style={{ height: `${Math.min(v, 100)}%`, background: v > 90 ? C.alarm : C.amber }}
+                            style={{ height: `${Math.min(v, 100)}%`, background: v > 90 ? C.alarm : C.accent }}
                           />
                         </div>
                         <div className="readout mt-1 text-center text-[10px] text-ink-3">{i}</div>
@@ -129,13 +129,15 @@ export function HostDetailPage({ me }: { me: Me }) {
 
           <section className="rise space-y-4" style={{ animationDelay: "120ms" }}>
             <div className="flex items-center justify-between">
-              <h2 className="label !text-ink-2">historia</h2>
-              <div className="flex border border-rule">
+              <h2 className="text-[1.0625rem] font-semibold tracking-[-0.012em] first-letter:uppercase">historia</h2>
+              <div className="tabs" role="tablist">
                 {RANGES.map((r) => (
                   <button
                     key={r}
                     onClick={() => setRange(r)}
-                    className={`readout px-3 py-1 text-xs ${r === range ? "bg-amber text-chassis" : "text-ink-2 hover:text-ink"}`}
+                    role="tab"
+                    aria-selected={r === range}
+                    className="tab readout"
                   >
                     {r}
                   </button>
@@ -186,7 +188,7 @@ export function HostDetailPage({ me }: { me: Me }) {
                       {bytes(d.used_bytes)} / {bytes(d.total_bytes)}
                     </span>
                     <div className="col-span-2">
-                      <SegmentMeter value={d.used_percent ?? 0} segments={40} />
+                      <Meter value={d.used_percent ?? 0} />
                     </div>
                   </div>
                 ))}
@@ -214,7 +216,7 @@ export function HostDetailPage({ me }: { me: Me }) {
                           {n.virtual && <span className="label ml-2">virt</span>}
                         </td>
                         <td className="px-4 py-2 text-cyan">{rate(n.rx_bytes_per_second)}</td>
-                        <td className="px-4 py-2 text-amber">{rate(n.tx_bytes_per_second)}</td>
+                        <td className="px-4 py-2 text-violet">{rate(n.tx_bytes_per_second)}</td>
                         <td className="px-4 py-2">{bytes(n.rx_bytes_total)}</td>
                         <td className="px-4 py-2">{bytes(n.tx_bytes_total)}</td>
                         <td className={`px-4 py-2 ${(n.rx_errors ?? 0) + (n.tx_errors ?? 0) > 0 ? "text-alarm" : ""}`}>{(n.rx_errors ?? 0) + (n.tx_errors ?? 0)}</td>
@@ -228,8 +230,8 @@ export function HostDetailPage({ me }: { me: Me }) {
                   <div className="label mb-2">temperatury</div>
                   <div className="flex flex-wrap gap-2">
                     {m.temperatures.map((t) => (
-                      <span key={t.sensor} className="readout border border-rule px-2 py-1 text-xs">
-                        {t.sensor} <span className={(t.celsius ?? 0) > 80 ? "text-alarm" : "text-amber"}>{t.celsius?.toFixed(0)}°C</span>
+                      <span key={t.sensor} className="readout rounded-md border border-rule px-2 py-1 text-xs">
+                        {t.sensor} <span className={(t.celsius ?? 0) > 80 ? "text-alarm" : "text-ink"}>{t.celsius?.toFixed(0)}°C</span>
                       </span>
                     ))}
                   </div>
@@ -258,11 +260,11 @@ export function HostHeader({ host: h, isAdmin }: { host: Host; isAdmin: boolean 
     <>
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <Link to="/" className="label hover:!text-amber">
-            ← 01 / hosty
+          <Link to="/" className="back-link">
+            ‹ Hosty
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-4">
-            <h1 className="font-display text-2xl font-semibold tracking-wider">{h.name}</h1>
+            <h1 className="title">{h.name}</h1>
             <StatusLamp status={h.status} />
           </div>
           <div className="readout mt-1 text-xs text-ink-3">
@@ -273,17 +275,17 @@ export function HostHeader({ host: h, isAdmin }: { host: Host; isAdmin: boolean 
       </header>
       {h.error && h.status !== "online" && <ErrorText error={`Ostatni błąd połączenia: ${h.error}`} />}
       {h.status !== "pending" && (
-        <nav className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-rule">
+        <nav className="tabs">
           {tabs.map((t) => (
             <Link
               key={t.to}
               to={t.to}
               params={{ id: h.id }}
               activeOptions={{ exact: t.to === "/hosts/$id" }}
-              className="-mb-px border-b-2 border-transparent px-4 py-2 font-display text-xs font-semibold tracking-[0.14em] text-ink-3 uppercase transition-colors hover:text-ink data-[status=active]:border-amber data-[status=active]:text-ink"
+              className="tab"
             >
               {t.label}
-              {"count" in t && t.count !== undefined && <span className="readout ml-2 text-ink-3">{t.count}</span>}
+              {"count" in t && t.count !== undefined && <span className="text-ink-3 tabular-nums">{t.count}</span>}
             </Link>
           ))}
         </nav>
@@ -321,16 +323,16 @@ function HostActions({ hostId, name, address, online }: { hostId: string; name: 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button className="btn" onClick={() => rotate.mutate()} disabled={!online || rotate.isPending} title="Wymusza wymianę certyfikatu mTLS agenta">
-        {rotate.isPending ? "rotacja…" : rotate.isSuccess ? "cert ✓" : "rotuj cert"}
+        {rotate.isPending ? "Rotacja…" : rotate.isSuccess ? "Cert ✓" : "Rotuj cert"}
       </button>
       <button className="btn" onClick={() => enroll.mutate()} disabled={enroll.isPending}>
-        nowy pakiet
+        Nowy pakiet
       </button>
       <button className="btn" onClick={() => setModal("edit")}>
-        edytuj
+        Edytuj
       </button>
       <button className="btn btn-danger" onClick={() => setModal("delete")}>
-        usuń
+        Usuń
       </button>
       <div className="basis-full">
         <ErrorText error={rotate.error ?? enroll.error} />
@@ -354,7 +356,7 @@ function HostActions({ hostId, name, address, online }: { hostId: string; name: 
             <ErrorText error={update.error} />
             <div className="flex justify-end">
               <button className="btn btn-primary" disabled={update.isPending}>
-                zapisz
+                Zapisz
               </button>
             </div>
           </form>
@@ -369,17 +371,17 @@ function HostActions({ hostId, name, address, online }: { hostId: string; name: 
           <ErrorText error={del.error} />
           <div className="mt-5 flex justify-end gap-2">
             <button className="btn" onClick={() => setModal(null)}>
-              anuluj
+              Anuluj
             </button>
             <button className="btn btn-danger" onClick={() => del.mutate()} disabled={del.isPending}>
-              usuń i unieważnij
+              Usuń i unieważnij
             </button>
           </div>
         </Modal>
       )}
       {modal === "enroll" && enrollment && (
         <Modal title={`Rejestracja · ${name}`} onClose={() => setModal(null)}>
-          <p className="mb-4 border-l-2 border-warn bg-warn/10 px-3 py-2 text-sm text-warn">
+          <p className="mb-4 rounded-[var(--radius-control)] bg-warn/10 px-3 py-2 text-sm text-warn">
             Po rejestracji z nowym pakietem dotychczasowe certyfikaty agenta zostaną unieważnione. Usuń wolumen danych agenta przed ponowną rejestracją.
           </p>
           <EnrollInstructions host={{ id: hostId, name, address, status: "pending", created_at: "" }} enrollment={enrollment} />

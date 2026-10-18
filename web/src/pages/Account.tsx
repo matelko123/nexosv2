@@ -25,8 +25,8 @@ export function SessionRow({ s, onRevoke }: { s: SessionInfo; onRevoke?: () => v
         </div>
       </div>
       {onRevoke && !s.current && (
-        <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={onRevoke}>
-          wyloguj
+        <button className="btn btn-sm" onClick={onRevoke}>
+          Wyloguj
         </button>
       )}
     </div>
@@ -61,7 +61,7 @@ export function AccountPage({ me }: { me: Me }) {
     <div className="space-y-6">
       <header className="rise">
         <div className="label">konto</div>
-        <h1 className="font-display text-2xl font-semibold tracking-wider">{me.user.username}</h1>
+        <h1 className="title">{me.user.username}</h1>
         <div className="label mt-1">rola: {me.user.role}</div>
       </header>
       <ErrorText error={account.error} />
@@ -95,7 +95,7 @@ export function AccountPage({ me }: { me: Me }) {
             <ErrorText error={changePw.error} />
             {changePw.isSuccess && <p className="text-sm text-signal">Hasło zmienione. Pozostałe sesje zostały wylogowane.</p>}
             <button className="btn btn-primary" disabled={changePw.isPending || mismatch}>
-              zmień hasło
+              Zmień hasło
             </button>
           </form>
         </section>
@@ -107,9 +107,9 @@ export function AccountPage({ me }: { me: Me }) {
               Passkey (Windows Hello, Touch ID, klucz YubiKey, telefon) może zastąpić kod TOTP przy logowaniu. Jest odporny na phishing, bo przeglądarka wiąże
               go z adresem NexOS.
             </p>
-            {a && !a.passkeys_available && <p className="border-l-2 border-warn bg-warn/10 px-3 py-2 text-sm text-warn">{a.passkeys_unavailable_reason}</p>}
+            {a && !a.passkeys_available && <p className="rounded-[var(--radius-control)] bg-warn/10 px-3 py-2 text-sm text-warn">{a.passkeys_unavailable_reason}</p>}
             {a && a.passkeys_available && !passkeysSupported() && <p className="text-sm text-warn">Ta przeglądarka nie obsługuje passkeys.</p>}
-            <div className="divide-y divide-rule border border-rule">
+            <div className="divide-y divide-rule overflow-hidden rounded-lg border border-rule">
               {(a?.passkeys ?? []).map((k) => (
                 <div key={k.id} className="flex items-center justify-between gap-3 px-3 py-2">
                   <div>
@@ -118,8 +118,8 @@ export function AccountPage({ me }: { me: Me }) {
                       dodany {dateTime(k.created_at)} · {k.last_used_at ? `użyty ${ago(k.last_used_at)}` : "jeszcze nieużyty"}
                     </div>
                   </div>
-                  <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" onClick={() => setDelKey(k)}>
-                    usuń
+                  <button className="btn btn-danger btn-sm" onClick={() => setDelKey(k)}>
+                    Usuń
                   </button>
                 </div>
               ))}
@@ -135,7 +135,7 @@ export function AccountPage({ me }: { me: Me }) {
               >
                 <input className="field !w-56 !py-1.5" placeholder="nazwa, np. laptop" required maxLength={64} value={keyName} onChange={(e) => setKeyName(e.target.value)} />
                 <button className="btn" disabled={addKey.isPending || !keyName.trim()}>
-                  {addKey.isPending ? "czekam na klucz…" : "+ dodaj passkey"}
+                  {addKey.isPending ? "Czekam na klucz…" : "Dodaj passkey"}
                 </button>
               </form>
             )}
@@ -147,8 +147,8 @@ export function AccountPage({ me }: { me: Me }) {
       <section className="panel rise" style={{ animationDelay: "120ms" }}>
         <PanelHeader title={`Aktywne sesje (${a?.sessions.length ?? 0})`}>
           {others > 0 && (
-            <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => revokeOthers.mutate()} disabled={revokeOthers.isPending}>
-              wyloguj pozostałe ({others})
+            <button className="btn btn-sm" onClick={() => revokeOthers.mutate()} disabled={revokeOthers.isPending}>
+              Wyloguj pozostałe ({others})
             </button>
           )}
         </PanelHeader>
@@ -161,7 +161,7 @@ export function AccountPage({ me }: { me: Me }) {
       </section>
 
       {delKey && (
-        <Confirm title="Usuń passkey" confirmLabel="usuń" danger pending={removeKey.isPending} error={removeKey.error} onClose={() => setDelKey(null)} onConfirm={() => removeKey.mutate(delKey.id)}>
+        <Confirm title="Usuń passkey" confirmLabel="Usuń" danger pending={removeKey.isPending} error={removeKey.error} onClose={() => setDelKey(null)} onConfirm={() => removeKey.mutate(delKey.id)}>
           <p>
             Passkey <strong className="text-ink">{delKey.name}</strong> przestanie działać przy logowaniu. Kod TOTP nadal będzie działał.
           </p>

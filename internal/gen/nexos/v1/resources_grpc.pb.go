@@ -656,6 +656,7 @@ const (
 	VolumeService_CreateVolume_FullMethodName  = "/nexos.v1.VolumeService/CreateVolume"
 	VolumeService_RemoveVolume_FullMethodName  = "/nexos.v1.VolumeService/RemoveVolume"
 	VolumeService_PruneVolumes_FullMethodName  = "/nexos.v1.VolumeService/PruneVolumes"
+	VolumeService_GetDiskUsage_FullMethodName  = "/nexos.v1.VolumeService/GetDiskUsage"
 )
 
 // VolumeServiceClient is the client API for VolumeService service.
@@ -667,6 +668,10 @@ type VolumeServiceClient interface {
 	CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error)
 	RemoveVolume(ctx context.Context, in *RemoveVolumeRequest, opts ...grpc.CallOption) (*RemoveVolumeResponse, error)
 	PruneVolumes(ctx context.Context, in *PruneVolumesRequest, opts ...grpc.CallOption) (*PruneVolumesResponse, error)
+	// GetDiskUsage reports space taken by volumes, bind-mounted host paths and
+	// container writable layers. Sizes are computed in the background and
+	// cached; while the first pass runs, the response has computing = true.
+	GetDiskUsage(ctx context.Context, in *GetDiskUsageRequest, opts ...grpc.CallOption) (*GetDiskUsageResponse, error)
 }
 
 type volumeServiceClient struct {
@@ -727,6 +732,16 @@ func (c *volumeServiceClient) PruneVolumes(ctx context.Context, in *PruneVolumes
 	return out, nil
 }
 
+func (c *volumeServiceClient) GetDiskUsage(ctx context.Context, in *GetDiskUsageRequest, opts ...grpc.CallOption) (*GetDiskUsageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDiskUsageResponse)
+	err := c.cc.Invoke(ctx, VolumeService_GetDiskUsage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VolumeServiceServer is the server API for VolumeService service.
 // All implementations must embed UnimplementedVolumeServiceServer
 // for forward compatibility.
@@ -736,6 +751,10 @@ type VolumeServiceServer interface {
 	CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error)
 	RemoveVolume(context.Context, *RemoveVolumeRequest) (*RemoveVolumeResponse, error)
 	PruneVolumes(context.Context, *PruneVolumesRequest) (*PruneVolumesResponse, error)
+	// GetDiskUsage reports space taken by volumes, bind-mounted host paths and
+	// container writable layers. Sizes are computed in the background and
+	// cached; while the first pass runs, the response has computing = true.
+	GetDiskUsage(context.Context, *GetDiskUsageRequest) (*GetDiskUsageResponse, error)
 	mustEmbedUnimplementedVolumeServiceServer()
 }
 
@@ -760,6 +779,9 @@ func (UnimplementedVolumeServiceServer) RemoveVolume(context.Context, *RemoveVol
 }
 func (UnimplementedVolumeServiceServer) PruneVolumes(context.Context, *PruneVolumesRequest) (*PruneVolumesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PruneVolumes not implemented")
+}
+func (UnimplementedVolumeServiceServer) GetDiskUsage(context.Context, *GetDiskUsageRequest) (*GetDiskUsageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDiskUsage not implemented")
 }
 func (UnimplementedVolumeServiceServer) mustEmbedUnimplementedVolumeServiceServer() {}
 func (UnimplementedVolumeServiceServer) testEmbeddedByValue()                       {}
@@ -872,6 +894,24 @@ func _VolumeService_PruneVolumes_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VolumeService_GetDiskUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDiskUsageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VolumeServiceServer).GetDiskUsage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VolumeService_GetDiskUsage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VolumeServiceServer).GetDiskUsage(ctx, req.(*GetDiskUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VolumeService_ServiceDesc is the grpc.ServiceDesc for VolumeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -898,6 +938,10 @@ var VolumeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PruneVolumes",
 			Handler:    _VolumeService_PruneVolumes_Handler,
+		},
+		{
+			MethodName: "GetDiskUsage",
+			Handler:    _VolumeService_GetDiskUsage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

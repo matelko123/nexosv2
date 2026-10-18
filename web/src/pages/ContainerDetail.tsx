@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { api, observability, wsUrl } from "../lib/api";
 import { useJsonSocket } from "../lib/ws";
 import { bytes, dateTime, pct, rate } from "../lib/format";
-import type { ContainerStats, Me, StatsMessage } from "../lib/types";
+import type { Container, ContainerStats, Me, StatsMessage } from "../lib/types";
 import { Chart } from "../components/Chart";
 import { ErrorText, PanelHeader, Stat } from "../components/ui";
 import { ContainerActions, portsText, StateBadge } from "../components/containers";
 import { LogViewer } from "../components/LogViewer";
+import { StorageList, StorageStatus, storageOf, useDiskUsage } from "../components/storage";
 import { ContainerTerminal } from "../components/Terminal";
 import { useHost } from "./HostDetail";
 
@@ -36,8 +37,8 @@ export function ContainerDetailPage({ me }: { me: Me }) {
   if (!c) {
     return (
       <div className="space-y-4">
-        <Link to="/hosts/$id/containers" params={{ id }} className="label hover:!text-amber">
-          ← kontenery
+        <Link to="/hosts/$id/containers" params={{ id }} className="back-link">
+          ‹ Kontenery
         </Link>
         <ErrorText error={containers.error ?? "Kontener nie istnieje (mógł zostać usunięty)."} />
       </div>
@@ -48,11 +49,11 @@ export function ContainerDetailPage({ me }: { me: Me }) {
     <div className="space-y-5">
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <Link to="/hosts/$id/containers" params={{ id }} className="label hover:!text-amber">
-            ← {host.data.name} / kontenery
+          <Link to="/hosts/$id/containers" params={{ id }} className="back-link">
+            ‹ {host.data.name} · Kontenery
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-4">
-            <h1 className="font-display text-2xl font-semibold tracking-wider">{c.name}</h1>
+            <h1 className="title">{c.name}</h1>
             <StateBadge c={c} />
           </div>
           <div className="readout mt-1 text-xs text-ink-3">
@@ -63,16 +64,16 @@ export function ContainerDetailPage({ me }: { me: Me }) {
         {role !== "viewer" && <ContainerActions hostId={id} c={c} onRemoved={() => navigate({ to: "/hosts/$id/containers", params: { id } })} />}
       </header>
 
-      <nav className="flex gap-1 border-b border-rule">
+      <nav className="tabs" role="tablist">
         {tabs
           .filter((t) => t.show)
           .map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`-mb-px border-b-2 px-4 py-2 font-display text-xs font-semibold tracking-[0.14em] uppercase transition-colors ${
-                tab === t.key ? "border-amber text-ink" : "border-transparent text-ink-3 hover:text-ink"
-              }`}
+              role="tab"
+              aria-selected={tab === t.key}
+              className="tab"
             >
               {t.label}
             </button>
@@ -84,6 +85,7 @@ export function ContainerDetailPage({ me }: { me: Me }) {
         {tab === "stats" && (
           <div className="space-y-6">
             <StatsView hostId={id} containerId={c.id} running={c.state === "running"} />
+            <ContainerStorage hostId={id} c={c} />
             <ContainerHistory hostId={id} name={c.name} />
           </div>
         )}
@@ -106,11 +108,11 @@ function StatsView({ hostId, containerId, running }: { hostId: string; container
     const x = hist.map((h) => h.ts);
     return {
       x,
-      cpu: [{ label: "cpu %", color: "#ffb000", values: hist.map((h) => h.s.cpu_percent ?? 0) }],
-      mem: [{ label: "pamięć", color: "#5ccfe6", values: hist.map((h) => h.s.memory_usage_bytes ?? 0) }],
+      cpu: [{ label: "cpu %", color: "var(--color-accent)", values: hist.map((h) => h.s.cpu_percent ?? 0) }],
+      mem: [{ label: "pamięć", color: "var(--color-cyan)", values: hist.map((h) => h.s.memory_usage_bytes ?? 0) }],
       net: [
-        { label: "rx ↓", color: "#5ccfe6", values: hist.map((h) => h.s.network_rx_bytes_per_second ?? 0) },
-        { label: "tx ↑", color: "#ffb000", values: hist.map((h) => h.s.network_tx_bytes_per_second ?? 0) },
+        { label: "rx ↓", color: "var(--color-cyan)", values: hist.map((h) => h.s.network_rx_bytes_per_second ?? 0) },
+        { label: "tx ↑", color: "var(--color-violet)", values: hist.map((h) => h.s.network_tx_bytes_per_second ?? 0) },
       ],
     };
   }, [hist]);
@@ -152,6 +154,30 @@ function StatsView({ hostId, containerId, running }: { hostId: string; container
   );
 }
 
+/** Volumes and bind mounts of the container with their measured sizes. */
+function ContainerStorage({ hostId, c }: { hostId: string; c: Container }) {
+  const du = useDiskUsage(hostId);
+  const storage = useMemo(() => storageOf([c], du.data), [c, du.data]);
+  const layer = du.data?.containers?.find((x) => x.id === c.id);
+  const image = layer?.size_root_fs_bytes && layer.size_rw_bytes !== undefined ? layer.size_root_fs_bytes - (layer.size_rw_bytes ?? 0) : undefined;
+  return (
+    <div className="panel">
+      <PanelHeader title="Dane">
+        <StorageStatus du={du} />
+      </PanelHeader>
+      {du.data?.computed_unix ? (
+        <div className="grid grid-cols-2 gap-4 border-b border-rule p-4 sm:grid-cols-4">
+          <Stat label="łącznie" value={bytes(storage.total)} sub="wolumeny, katalogi i warstwa" />
+          <Stat label="wolumeny" value={bytes(storage.volumes)} />
+          <Stat label="katalogi hosta" value={bytes(storage.binds)} />
+          <Stat label="warstwa kontenera" value={bytes(storage.writable)} sub={image ? `obraz ${bytes(image)} (współdzielony)` : undefined} />
+        </div>
+      ) : null}
+      <StorageList storage={{ ...storage, writable: 0 }} showUsers />
+    </div>
+  );
+}
+
 const HISTORY_RANGES = ["1h", "6h", "24h", "7d"] as const;
 
 /** Stored per-minute history; keyed by name so it survives re-creation. */
@@ -162,21 +188,21 @@ function ContainerHistory({ hostId, name }: { hostId: string; name: string }) {
     const pts = q.data ?? [];
     return {
       x: pts.map((p) => p.ts / 1000),
-      cpu: [{ label: "cpu %", color: "#ffb000", values: pts.map((p) => p.cpu) }],
-      mem: [{ label: "pamięć", color: "#5ccfe6", values: pts.map((p) => p.mem) }],
+      cpu: [{ label: "cpu %", color: "var(--color-accent)", values: pts.map((p) => p.cpu) }],
+      mem: [{ label: "pamięć", color: "var(--color-cyan)", values: pts.map((p) => p.mem) }],
       net: [
-        { label: "rx ↓", color: "#5ccfe6", values: pts.map((p) => p.net_rx) },
-        { label: "tx ↑", color: "#ffb000", values: pts.map((p) => p.net_tx) },
+        { label: "rx ↓", color: "var(--color-cyan)", values: pts.map((p) => p.net_rx) },
+        { label: "tx ↑", color: "var(--color-violet)", values: pts.map((p) => p.net_tx) },
       ],
     };
   }, [q.data]);
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="label !text-ink-2">historia (średnie minutowe)</h2>
-        <div className="flex border border-rule">
+        <h2 className="text-[1.0625rem] font-semibold tracking-[-0.012em] first-letter:uppercase">historia (średnie minutowe)</h2>
+        <div className="tabs" role="tablist">
           {HISTORY_RANGES.map((r) => (
-            <button key={r} onClick={() => setRange(r)} className={`readout px-3 py-1 text-xs ${r === range ? "bg-amber text-chassis" : "text-ink-2 hover:text-ink"}`}>
+            <button key={r} onClick={() => setRange(r)} role="tab" aria-selected={r === range} className="tab readout">
               {r}
             </button>
           ))}
@@ -258,7 +284,7 @@ function Details({ hostId, containerId, ports }: { hostId: string; containerId: 
         <PanelHeader title="Sieć i porty" />
         <div className="space-y-3 p-4">
           <div className="flex flex-wrap gap-1.5">
-            {ports.length ? ports.map((p) => <span key={p} className="readout border border-rule px-2 py-0.5 text-xs">{p}</span>) : <span className="text-sm text-ink-3">brak opublikowanych portów</span>}
+            {ports.length ? ports.map((p) => <span key={p} className="readout rounded-md border border-rule px-2 py-0.5 text-xs">{p}</span>) : <span className="text-sm text-ink-3">brak opublikowanych portów</span>}
           </div>
           <table className="w-full text-sm">
             <tbody className="readout divide-y divide-rule text-xs">
@@ -282,7 +308,7 @@ function Details({ hostId, containerId, ports }: { hostId: string; containerId: 
               <tr key={i}>
                 <td className="px-4 py-2 text-ink-3">{m.Type}</td>
                 <td className="px-2 py-2 break-all">{m.Name || m.Source}</td>
-                <td className="px-2 py-2 break-all text-amber">{m.Destination}</td>
+                <td className="px-2 py-2 break-all text-ink">{m.Destination}</td>
                 <td className="px-4 py-2 text-ink-3">{m.RW ? "rw" : "ro"}</td>
               </tr>
             ))}
@@ -297,8 +323,8 @@ function Details({ hostId, containerId, ports }: { hostId: string; containerId: 
 
       <div className="panel">
         <PanelHeader title={`Zmienne środowiskowe (${env.length})`}>
-          <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setReveal(!reveal)}>
-            {reveal ? "ukryj wartości" : "pokaż wartości"}
+          <button className="btn btn-sm" onClick={() => setReveal(!reveal)}>
+            {reveal ? "Ukryj wartości" : "Pokaż wartości"}
           </button>
         </PanelHeader>
         <div className="readout max-h-80 divide-y divide-rule overflow-auto text-xs">

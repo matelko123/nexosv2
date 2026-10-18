@@ -127,6 +127,8 @@ func (s *Server) Handler() http.Handler {
 			r.Get("/hosts/{id}/volumes/{vname}/inspect", s.handleInspectVolume)
 			r.Get("/hosts/{id}/stacks", s.handleListStacks)
 			r.Get("/hosts/{id}/container-history/{name}", s.handleContainerHistory)
+			r.Get("/hosts/{id}/container-history", s.handleContainersHistory)
+			r.Get("/hosts/{id}/disk-usage", s.handleDiskUsage)
 			r.Get("/hosts/{id}/updates", s.handleListUpdates)
 			r.Get("/updates", s.handleAllUpdates)
 			r.Get("/alerts", s.handleAlertEvents)

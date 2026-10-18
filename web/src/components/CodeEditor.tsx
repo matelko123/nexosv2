@@ -6,33 +6,33 @@ import { yaml } from "@codemirror/lang-yaml";
 import { HighlightStyle, syntaxHighlighting, StreamLanguage } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 
-const theme = EditorView.theme(
-  {
-    "&": { backgroundColor: "#0b0c0d", color: "#e6e1d6", fontSize: "13px", height: "100%" },
-    ".cm-scroller": { fontFamily: "IBM Plex Mono, monospace", lineHeight: "1.55" },
-    ".cm-content": { caretColor: "#ffb000" },
-    ".cm-cursor": { borderLeftColor: "#ffb000" },
-    ".cm-gutters": { backgroundColor: "#121416", color: "#6b675f", border: "none", borderRight: "1px solid #262a2e" },
-    ".cm-activeLine": { backgroundColor: "rgba(255,176,0,0.05)" },
-    ".cm-activeLineGutter": { backgroundColor: "rgba(255,176,0,0.08)", color: "#ffb000" },
-    "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": { backgroundColor: "rgba(255,176,0,0.25) !important" },
-    ".cm-matchingBracket": { backgroundColor: "rgba(92,207,230,0.2)", outline: "none" },
-    ".cm-foldPlaceholder": { backgroundColor: "#262a2e", border: "none", color: "#a49e92" },
-    ".cm-tooltip": { backgroundColor: "#181b1e", border: "1px solid #343a40" },
-    ".cm-panels": { backgroundColor: "#121416", color: "#e6e1d6" },
-    ".cm-searchMatch": { backgroundColor: "rgba(92,207,230,0.25)" },
+// Colors come from the app tokens, so the editor follows light and dark appearance.
+const theme = EditorView.theme({
+  "&": { backgroundColor: "var(--color-panel)", color: "var(--color-ink)", fontSize: "13px", height: "100%" },
+  ".cm-scroller": { fontFamily: "var(--font-mono)", lineHeight: "1.6" },
+  ".cm-content": { caretColor: "var(--color-accent)" },
+  ".cm-cursor": { borderLeftColor: "var(--color-accent)", borderLeftWidth: "2px" },
+  ".cm-gutters": { backgroundColor: "var(--color-panel)", color: "var(--color-ink-3)", border: "none", borderRight: "1px solid var(--color-rule)" },
+  ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--color-accent) 6%, transparent)" },
+  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--color-ink)" },
+  "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
+    backgroundColor: "color-mix(in srgb, var(--color-accent) 28%, transparent) !important",
   },
-  { dark: true },
-);
+  ".cm-matchingBracket": { backgroundColor: "color-mix(in srgb, var(--color-cyan) 22%, transparent)", outline: "none" },
+  ".cm-foldPlaceholder": { backgroundColor: "var(--color-panel-2)", border: "none", color: "var(--color-ink-2)" },
+  ".cm-tooltip": { backgroundColor: "var(--color-panel)", border: "none", borderRadius: "8px", boxShadow: "var(--sheet-shadow)" },
+  ".cm-panels": { backgroundColor: "var(--color-panel-2)", color: "var(--color-ink)" },
+  ".cm-searchMatch": { backgroundColor: "color-mix(in srgb, var(--color-warn) 30%, transparent)" },
+});
 
 const highlight = HighlightStyle.define([
-  { tag: [t.propertyName, t.definition(t.propertyName)], color: "#5ccfe6" },
-  { tag: [t.string, t.special(t.string)], color: "#e6e1d6" },
-  { tag: [t.number, t.bool, t.null, t.atom], color: "#ffb000" },
-  { tag: t.comment, color: "#6b675f", fontStyle: "italic" },
-  { tag: [t.keyword, t.typeName, t.labelName], color: "#d7a6ff" },
-  { tag: [t.punctuation, t.separator, t.bracket], color: "#a49e92" },
-  { tag: t.meta, color: "#4ade80" },
+  { tag: [t.propertyName, t.definition(t.propertyName)], color: "var(--color-accent)" },
+  { tag: [t.string, t.special(t.string)], color: "var(--color-ink)" },
+  { tag: [t.number, t.bool, t.null, t.atom], color: "var(--color-violet)" },
+  { tag: t.comment, color: "var(--color-ink-3)", fontStyle: "italic" },
+  { tag: [t.keyword, t.typeName, t.labelName], color: "var(--color-alarm)" },
+  { tag: [t.punctuation, t.separator, t.bracket], color: "var(--color-ink-3)" },
+  { tag: t.meta, color: "var(--color-signal)" },
 ]);
 
 // .env files: KEY=value with comments.
@@ -113,5 +113,5 @@ export function CodeEditor({
     }
   }, [value]);
 
-  return <div ref={host} className="h-full min-h-[300px] overflow-hidden border border-rule" />;
+  return <div ref={host} className="h-full min-h-[300px] overflow-hidden rounded-lg border border-rule" />;
 }

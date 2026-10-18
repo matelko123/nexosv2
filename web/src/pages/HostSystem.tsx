@@ -25,17 +25,17 @@ function SystemView({ host, me }: { host: Host; me: Me }) {
     return (
       <div className="panel p-6 text-sm text-ink-2">
         Funkcje hosta są wyłączone na tym agencie. Aby je włączyć, uruchom agenta z plikiem{" "}
-        <code className="readout text-amber">compose.host-features.yaml</code>:
-        <pre className="readout mt-3 bg-chassis p-3 text-xs text-ink">docker compose -f compose.yaml -f compose.host-features.yaml up -d</pre>
+        <code className="readout text-ink">compose.host-features.yaml</code>:
+        <pre className="readout mt-3 rounded-lg bg-panel-2 p-3 text-xs text-ink">docker compose -f compose.yaml -f compose.host-features.yaml up -d</pre>
       </div>
     );
   }
   const active = tab && tabs.includes(tab) ? tab : tabs[0];
   return (
     <div className="space-y-5">
-      <div className="flex border border-rule self-start w-fit">
+      <div className="tabs" role="tablist">
         {tabs.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`label px-3 py-1.5 ${t === active ? "bg-amber !text-chassis" : "hover:!text-ink"}`}>
+          <button key={t} onClick={() => setTab(t)} role="tab" aria-selected={t === active} className="tab">
             {tabLabels[t]}
           </button>
         ))}
@@ -81,7 +81,7 @@ function Processes({ hostId, me }: { hostId: string; me: Me }) {
   const cpuSum = (q.data?.processes ?? []).reduce((s, p) => s + (p.cpu_percent ?? 0), 0);
   const head = (k: SortKey, label: string) => (
     <Th>
-      <button className={`label ${sort === k ? "!text-amber" : "hover:!text-ink"}`} onClick={() => setSort(k)}>
+      <button className={`label ${sort === k ? "!text-accent" : "hover:!text-ink"}`} onClick={() => setSort(k)}>
         {label}
         {sort === k && " ▾"}
       </button>
@@ -94,7 +94,7 @@ function Processes({ hostId, me }: { hostId: string; me: Me }) {
         <div className="flex flex-wrap items-center gap-4">
           <input className="field w-72 !py-1.5" placeholder="pid, nazwa, polecenie, użytkownik, kontener…" value={filter} onChange={(e) => setFilter(e.target.value)} />
           <label className="label flex cursor-pointer items-center gap-1.5">
-            <input type="checkbox" className="accent-amber" checked={live} onChange={(e) => setLive(e.target.checked)} />
+            <input type="checkbox" className="accent-accent" checked={live} onChange={(e) => setLive(e.target.checked)} />
             odświeżaj co 5 s
           </label>
         </div>
@@ -126,7 +126,7 @@ function Processes({ hostId, me }: { hostId: string; me: Me }) {
                   <td className="max-w-[520px] px-4 py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-ink">{p.name}</span>
-                      {container && <span className="label border border-rule px-1 !text-cyan">{container}</span>}
+                      {container && <span className="label rounded-md border border-rule px-1 !text-cyan">{container}</span>}
                       {p.status === "zombie" && <span className="label !text-alarm">zombie</span>}
                     </div>
                     <div className="truncate text-ink-3" title={p.command}>
@@ -134,18 +134,18 @@ function Processes({ hostId, me }: { hostId: string; me: Me }) {
                     </div>
                   </td>
                   <td className="px-4 py-1.5">
-                    <span className={(p.cpu_percent ?? 0) > 50 ? "text-alarm" : (p.cpu_percent ?? 0) > 10 ? "text-amber" : ""}>{pct(p.cpu_percent)}</span>
+                    <span className={(p.cpu_percent ?? 0) > 50 ? "text-alarm" : (p.cpu_percent ?? 0) > 10 ? "text-accent" : ""}>{pct(p.cpu_percent)}</span>
                   </td>
                   <td className="px-4 py-1.5">{bytes(p.memory_rss_bytes)}</td>
                   <td className="px-4 py-1.5 text-ink-3">{p.started_unix ? ago(new Date(p.started_unix * 1000).toISOString()) : "—"}</td>
                   <td className="px-4 py-1.5 text-right">
                     {isAdmin && (
                       <div className="flex justify-end gap-1">
-                        <button className="btn !px-1.5 !py-0 !text-[10px]" onClick={() => setTarget({ p, sig: "term" })}>
-                          term
+                        <button className="btn btn-sm" onClick={() => setTarget({ p, sig: "term" })}>
+                          Term
                         </button>
-                        <button className="btn btn-danger !px-1.5 !py-0 !text-[10px]" onClick={() => setTarget({ p, sig: "kill" })}>
-                          kill
+                        <button className="btn btn-danger btn-sm" onClick={() => setTarget({ p, sig: "kill" })}>
+                          Kill
                         </button>
                       </div>
                     )}
@@ -214,16 +214,16 @@ function Units({ hostId, me }: { hostId: string; me: Me }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex border border-rule">
+        <div className="tabs" role="tablist">
           {(
             [
-              ["active", "aktywne"],
-              ["failed", `błędy${failed ? ` (${failed})` : ""}`],
-              ["inactive", "nieaktywne"],
-              ["all", "wszystkie"],
+              ["active", "Aktywne"],
+              ["failed", `Błędy${failed ? ` (${failed})` : ""}`],
+              ["inactive", "Nieaktywne"],
+              ["all", "Wszystkie"],
             ] as [UnitFilter, string][]
           ).map(([f, l]) => (
-            <button key={f} onClick={() => setFilter(f)} className={`label px-3 py-1.5 ${f === filter ? "bg-amber !text-chassis" : f === "failed" && failed ? "!text-alarm" : "hover:!text-ink"}`}>
+            <button key={f} onClick={() => setFilter(f)} role="tab" aria-selected={f === filter} className={`tab ${f === "failed" && failed ? "!text-alarm" : ""}`}>
               {l}
             </button>
           ))}
@@ -248,7 +248,7 @@ function Units({ hostId, me }: { hostId: string; me: Me }) {
                 <td className="max-w-[440px] px-4 py-2">
                   <div className="readout text-xs text-ink">
                     {u.name}
-                    {u.protected && <span className="label ml-2 border border-rule px-1 !text-amber-dim">chroniona</span>}
+                    {u.protected && <span className="label ml-2 rounded-md border border-rule px-1 !text-accent-dim">chroniona</span>}
                   </div>
                   <div className="truncate text-xs text-ink-3">{u.description}</div>
                 </td>
@@ -265,22 +265,22 @@ function Units({ hostId, me }: { hostId: string; me: Me }) {
                 <td className="px-4 py-2">
                   <div className="flex justify-end gap-1.5">
                     {canReadJournal && (
-                      <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setJournal(u.name)}>
-                        logi
+                      <button className="btn btn-sm" onClick={() => setJournal(u.name)}>
+                        Logi
                       </button>
                     )}
                     {isAdmin && u.active_state !== "active" && (
-                      <button className="btn !px-2 !py-0.5 !text-[10px]" disabled={action.isPending} onClick={() => action.mutate({ unit: u.name, action: "start" })}>
-                        start
+                      <button className="btn btn-sm" disabled={action.isPending} onClick={() => action.mutate({ unit: u.name, action: "start" })}>
+                        Start
                       </button>
                     )}
                     {isAdmin && !u.protected && u.active_state === "active" && (
                       <>
-                        <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setConfirm({ unit: u, action: "restart" })}>
-                          restart
+                        <button className="btn btn-sm" onClick={() => setConfirm({ unit: u, action: "restart" })}>
+                          Restart
                         </button>
-                        <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" onClick={() => setConfirm({ unit: u, action: "stop" })}>
-                          stop
+                        <button className="btn btn-danger btn-sm" onClick={() => setConfirm({ unit: u, action: "stop" })}>
+                          Stop
                         </button>
                       </>
                     )}
@@ -342,7 +342,7 @@ function JournalViewer({ hostId, unit, onClose }: { hostId: string; unit: string
       </PanelHeader>
       <div ref={box} className="readout h-80 overflow-auto bg-chassis px-3 py-2 text-[12px] leading-[1.55] break-all whitespace-pre-wrap">
         {lines.map((l, i) => (
-          <div key={i} className={/error|fail|denied|fatal/i.test(l) ? "text-[#ff9a8f]" : "text-ink-2"}>
+          <div key={i} className={/error|fail|denied|fatal/i.test(l) ? "text-alarm" : "text-ink-2"}>
             <span className="text-ink-3">{l.slice(0, 25)}</span>
             {l.slice(25)}
           </div>
@@ -370,7 +370,7 @@ function Packages({ hostId }: { hostId: string }) {
       <div className="grid gap-3 sm:grid-cols-4">
         {[
           ["system", d.distribution || "—", ""],
-          ["do aktualizacji", String(d.updates.length), d.updates.length ? "text-amber" : "text-signal"],
+          ["do aktualizacji", String(d.updates.length), d.updates.length ? "text-warn" : "text-signal"],
           ["bezpieczeństwa", String(security), security ? "text-alarm" : "text-signal"],
           ["listy pakietów", d.lists_updated_unix ? dateTime(d.lists_updated_unix * 1000) : "nieznane", stale ? "text-warn" : ""],
         ].map(([l, v, c]) => (
@@ -381,7 +381,7 @@ function Packages({ hostId }: { hostId: string }) {
         ))}
       </div>
       {d.reboot_required && (
-        <div className="border-l-2 border-warn bg-warn/10 px-4 py-2.5 text-sm text-warn">
+        <div className="rounded-[var(--radius-control)] bg-warn/10 px-4 py-2.5 text-sm text-warn">
           Host wymaga restartu{d.reboot_packages.length ? ` (${d.reboot_packages.join(", ")})` : ""}.
         </div>
       )}

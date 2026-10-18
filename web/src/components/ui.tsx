@@ -18,37 +18,20 @@ const statusLabel: Record<HostStatus, string> = {
 export function StatusLamp({ status, withLabel = true }: { status: HostStatus; withLabel?: boolean }) {
   const color = statusColor[status];
   return (
-    <span className="inline-flex items-center gap-2" title={statusLabel[status]}>
-      <span
-        className={`inline-block size-2 rounded-full ${status === "online" ? "lamp-on" : ""}`}
-        style={{ background: color, color }}
-      />
-      {withLabel && (
-        <span className="label" style={{ color }}>
-          {statusLabel[status]}
-        </span>
-      )}
+    <span className="inline-flex items-center gap-2" title={statusLabel[status]} style={{ color }}>
+      <span className="dot" />
+      {withLabel && <span className="text-[0.8125rem] font-medium first-letter:uppercase">{statusLabel[status]}</span>}
     </span>
   );
 }
 
-/** Segmented LED meter: the signature gauge of the console. */
-export function SegmentMeter({ value, segments = 24 }: { value: number; segments?: number }) {
-  const lit = Math.round((Math.min(Math.max(value, 0), 100) / 100) * segments);
+/** Capsule meter; the fill turns orange past 75% and red past 90%. */
+export function Meter({ value }: { value: number }) {
+  const v = Math.min(Math.max(value, 0), 100);
+  const color = v > 90 ? "var(--color-alarm)" : v > 75 ? "var(--color-warn)" : "var(--color-accent)";
   return (
-    <div className="flex h-2.5 gap-[2px]" role="meter" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100}>
-      {Array.from({ length: segments }, (_, i) => {
-        const at = ((i + 1) / segments) * 100;
-        const on = i < lit;
-        const color = at > 90 ? "var(--color-alarm)" : at > 75 ? "var(--color-warn)" : "var(--color-amber)";
-        return (
-          <span
-            key={i}
-            className="flex-1 transition-colors duration-300"
-            style={{ background: on ? color : "var(--color-rule)", boxShadow: on ? `0 0 6px -1px ${color}` : undefined }}
-          />
-        );
-      })}
+    <div className="meter" role="meter" aria-valuenow={Math.round(v)} aria-valuemin={0} aria-valuemax={100}>
+      <span style={{ width: `${v}%`, background: color }} />
     </div>
   );
 }
@@ -56,7 +39,7 @@ export function SegmentMeter({ value, segments = 24 }: { value: number; segments
 export function Sparkline({
   values,
   max,
-  color = "var(--color-amber)",
+  color = "var(--color-accent)",
   height = 36,
 }: {
   values: number[];
@@ -73,16 +56,16 @@ export function Sparkline({
   const area = `0,${height} ${pts.join(" ")} ${w},${height}`;
   return (
     <svg viewBox={`0 0 ${w} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none" aria-hidden>
-      <polygon points={area} fill={color} opacity={0.12} />
-      <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth={1.25} vectorEffect="non-scaling-stroke" />
+      <polygon points={area} fill={color} opacity={0.14} />
+      <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
 export function PanelHeader({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-rule px-4 py-2.5">
-      <h2 className="label !text-ink-2">{title}</h2>
+    <div className="flex min-h-12 items-center justify-between gap-4 border-b border-rule px-4 py-2.5">
+      <h2 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">{title}</h2>
       {children}
     </div>
   );
@@ -92,7 +75,7 @@ export function ErrorText({ error }: { error: unknown }) {
   if (!error) return null;
   const msg = error instanceof Error ? error.message : String(error);
   return (
-    <p className="border-l-2 border-alarm bg-alarm/10 px-3 py-2 text-sm text-alarm" role="alert">
+    <p className="rounded-[var(--radius-control)] bg-alarm/10 px-3 py-2 text-sm text-alarm" role="alert">
       {msg}
     </p>
   );
@@ -101,7 +84,7 @@ export function ErrorText({ error }: { error: unknown }) {
 export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="label block">{label}</span>
+      <span className="block text-[0.8125rem] font-medium text-ink-2">{label}</span>
       {children}
       {hint && <span className="block text-xs text-ink-3">{hint}</span>}
     </label>
@@ -118,15 +101,23 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   return (
     <dialog
       ref={ref}
-      onClose={onClose}
-      className="panel m-auto w-[min(640px,calc(100vw-2rem))] p-0 text-ink backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+      // StrictMode re-runs the effect (close, then showModal); ignore that stale close event.
+      onClose={(e) => !e.currentTarget.open && onClose()}
+      className="sheet m-auto max-h-[calc(100dvh-2rem)] w-[min(600px,calc(100vw-2rem))] overflow-y-auto overscroll-contain p-0"
     >
-      <PanelHeader title={title}>
-        <button className="label hover:!text-ink" onClick={onClose} aria-label="Zamknij">
-          esc ✕
+      <div className="flex items-start justify-between gap-4 px-6 pt-5">
+        <h2 className="text-[1.0625rem] font-semibold tracking-[-0.015em]">{title}</h2>
+        <button
+          className="-mt-0.5 -mr-2 grid size-7 shrink-0 place-items-center rounded-full bg-panel-2 text-ink-3 transition-colors hover:text-ink active:scale-95"
+          onClick={onClose}
+          aria-label="Zamknij"
+        >
+          <svg viewBox="0 0 12 12" className="size-2.5" aria-hidden>
+            <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+          </svg>
         </button>
-      </PanelHeader>
-      <div className="p-5">{children}</div>
+      </div>
+      <div className="px-6 pt-4 pb-6">{children}</div>
     </dialog>
   );
 }
@@ -135,17 +126,17 @@ export function CopyBox({ value, rows = 3 }: { value: string; rows?: number }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="relative">
-      <textarea readOnly value={value} rows={rows} className="field readout resize-none pr-24 text-xs break-all text-amber" onFocus={(e) => e.currentTarget.select()} />
+      <textarea readOnly value={value} rows={rows} className="field readout resize-none pr-24 text-xs break-all" onFocus={(e) => e.currentTarget.select()} />
       <button
         type="button"
-        className="btn absolute top-2 right-2 !px-2.5 !py-1"
+        className="btn btn-sm absolute top-2 right-2"
         onClick={async () => {
           await navigator.clipboard.writeText(value);
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         }}
       >
-        {copied ? "skopiowano" : "kopiuj"}
+        {copied ? "Skopiowano" : "Kopiuj"}
       </button>
     </div>
   );
@@ -190,10 +181,10 @@ export function Confirm({
         <ErrorText error={error} />
         <div className="flex justify-end gap-2">
           <button className="btn" onClick={onClose}>
-            anuluj
+            Anuluj
           </button>
           <button className={`btn ${danger ? "btn-danger" : "btn-primary"}`} disabled={pending || blocked} onClick={onConfirm}>
-            {pending ? "wykonywanie…" : confirmLabel}
+            {pending ? "Wykonywanie…" : confirmLabel.charAt(0).toUpperCase() + confirmLabel.slice(1)}
           </button>
         </div>
       </div>
@@ -205,7 +196,7 @@ export function Stat({ label, value, sub }: { label: string; value: ReactNode; s
   return (
     <div className="min-w-0">
       <div className="label">{label}</div>
-      <div className="readout mt-1 truncate text-lg text-ink">{value}</div>
+      <div className="readout mt-1 truncate text-lg font-medium text-ink">{value}</div>
       {sub && <div className="readout truncate text-xs text-ink-3">{sub}</div>}
     </div>
   );

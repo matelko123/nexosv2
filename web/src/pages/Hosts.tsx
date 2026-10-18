@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { useLiveHistory } from "../lib/live";
 import { bytes, duration, pct, rate } from "../lib/format";
 import type { Enrollment, Host, Me } from "../lib/types";
-import { CopyBox, ErrorText, Field, Modal, SegmentMeter, Sparkline, StatusLamp } from "../components/ui";
+import { CopyBox, ErrorText, Field, Modal, Meter, Sparkline, StatusLamp } from "../components/ui";
 import { isInfo, useActiveAlerts } from "./Alerts";
 
 export function HostsPage({ me }: { me: Me }) {
@@ -18,12 +18,12 @@ export function HostsPage({ me }: { me: Me }) {
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label">01 / flota</div>
-          <h1 className="font-display text-2xl font-semibold tracking-wider">Hosty</h1>
+          <div className="label">flota</div>
+          <h1 className="title">Hosty</h1>
         </div>
         {isAdmin && (
           <button className="btn btn-primary" onClick={() => setAdding(true)}>
-            + dodaj host
+            Dodaj host
           </button>
         )}
       </header>
@@ -32,7 +32,7 @@ export function HostsPage({ me }: { me: Me }) {
 
       {hosts.data && hosts.data.length === 0 && (
         <div className="panel rise p-10 text-center">
-          <p className="font-display text-lg tracking-wider">Brak podłączonych serwerów</p>
+          <p className="text-[1.0625rem] font-semibold">Brak podłączonych serwerów</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-ink-2">
             Dodaj host, a następnie uruchom na nim agenta z wygenerowanym pakietem rejestracyjnym. Agent nasłuchuje tylko na adresie WireGuard.
           </p>
@@ -61,17 +61,17 @@ function HostCard({ host, alerts }: { host: Host; alerts: number }) {
   const off = host.status !== "online";
 
   return (
-    <Link to="/hosts/$id" params={{ id: host.id }} className="panel group block transition-colors hover:border-rule-2">
+    <Link to="/hosts/$id" params={{ id: host.id }} className="panel pressable group block">
       <div className="flex items-start justify-between gap-3 px-4 pt-4">
         <div className="min-w-0">
-          <div className="truncate font-display text-lg font-semibold tracking-wide group-hover:text-amber">{host.name}</div>
+          <div className="truncate text-[1.0625rem] font-semibold tracking-[-0.012em]">{host.name}</div>
           <div className="readout truncate text-xs text-ink-3">
             {host.info?.hostname ?? host.hostname} · {host.address}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <StatusLamp status={host.status} />
-          {alerts > 0 && <span className="readout bg-alarm px-1.5 text-[10px] text-chassis">{alerts} {alerts === 1 ? "alert" : "alerty"}</span>}
+          {alerts > 0 && <span className="badge">{alerts} {alerts === 1 ? "alert" : "alerty"}</span>}
         </div>
       </div>
 
@@ -81,7 +81,7 @@ function HostCard({ host, alerts }: { host: Host; alerts: number }) {
             <span className="label">cpu</span>
             <span className="readout text-sm">{pct(m?.cpu_percent)}</span>
           </div>
-          <SegmentMeter value={m?.cpu_percent ?? 0} />
+          <Meter value={m?.cpu_percent ?? 0} />
         </div>
         <div>
           <div className="mb-1.5 flex items-baseline justify-between">
@@ -90,7 +90,7 @@ function HostCard({ host, alerts }: { host: Host; alerts: number }) {
               {bytes(m?.memory_used_bytes)} <span className="text-ink-3">/ {bytes(m?.memory_total_bytes)}</span>
             </span>
           </div>
-          <SegmentMeter value={memPct} />
+          <Meter value={memPct} />
         </div>
         {rootDisk && (
           <div>
@@ -98,7 +98,7 @@ function HostCard({ host, alerts }: { host: Host; alerts: number }) {
               <span className="label">dysk {rootDisk.mountpoint}</span>
               <span className="readout text-sm">{pct(rootDisk.used_percent, 0)}</span>
             </div>
-            <SegmentMeter value={rootDisk.used_percent ?? 0} />
+            <Meter value={rootDisk.used_percent ?? 0} />
           </div>
         )}
 
@@ -110,8 +110,8 @@ function HostCard({ host, alerts }: { host: Host; alerts: number }) {
           </div>
           <div>
             <div className="label">tx ↑</div>
-            <div className="readout text-sm text-amber">{rate(m?.network_tx_bytes_per_second)}</div>
-            <Sparkline values={hist.map((x) => x.network_tx_bytes_per_second ?? 0)} height={24} />
+            <div className="readout text-sm text-violet">{rate(m?.network_tx_bytes_per_second)}</div>
+            <Sparkline values={hist.map((x) => x.network_tx_bytes_per_second ?? 0)} color="var(--color-violet)" height={24} />
           </div>
         </div>
       </div>
@@ -137,10 +137,10 @@ function PendingCard({ host, isAdmin }: { host: Host; isAdmin: boolean }) {
   const gen = useMutation({ mutationFn: () => api.newEnrollment(host.id), onSuccess: setEnrollment });
   const expired = !host.enrollment_expires_at || new Date(host.enrollment_expires_at) < new Date();
   return (
-    <div className="panel border-dashed p-4">
+    <div className="panel border border-dashed border-rule-2 !bg-transparent !shadow-none p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate font-display text-lg font-semibold tracking-wide">{host.name}</div>
+          <div className="truncate text-[1.0625rem] font-semibold tracking-[-0.012em]">{host.name}</div>
           <div className="readout truncate text-xs text-ink-3">{host.address}</div>
         </div>
         <StatusLamp status="pending" />
@@ -152,10 +152,10 @@ function PendingCard({ host, isAdmin }: { host: Host; isAdmin: boolean }) {
       {isAdmin && (
         <div className="mt-4 flex gap-2">
           <button className="btn" onClick={() => gen.mutate()} disabled={gen.isPending}>
-            nowy pakiet
+            Nowy pakiet
           </button>
           <Link to="/hosts/$id" params={{ id: host.id }} className="btn">
-            szczegóły
+            Szczegóły
           </Link>
         </div>
       )}
@@ -198,10 +198,10 @@ function AddHostModal({ onClose }: { onClose: () => void }) {
           <ErrorText error={create.error} />
           <div className="flex justify-end gap-2">
             <button type="button" className="btn" onClick={onClose}>
-              anuluj
+              Anuluj
             </button>
             <button className="btn btn-primary" disabled={create.isPending}>
-              utwórz i wygeneruj pakiet
+              Utwórz i wygeneruj pakiet
             </button>
           </div>
         </form>
@@ -218,7 +218,7 @@ NEXOS_ENROLL=${enrollment.bundle}`;
     <div className="space-y-4">
       <p className="text-sm text-ink-2">
         Pakiet jest <strong className="text-ink">jednorazowy</strong> i wygasa{" "}
-        <span className="readout text-amber">{new Date(enrollment.expires_at).toLocaleTimeString("pl-PL")}</span>. Zawiera odcisk CA huba, więc
+        <span className="readout font-medium text-ink">{new Date(enrollment.expires_at).toLocaleTimeString("pl-PL")}</span>. Zawiera odcisk CA huba, więc
         agent nie zaufa nikomu innemu. Klucz prywatny agenta powstaje lokalnie i nigdy nie opuszcza serwera.
       </p>
       <Field label="1 · Zapisz obie linie jako plik .env w katalogu z compose.yaml agenta">

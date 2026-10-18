@@ -43,19 +43,19 @@ export function AlertsPage({ me }: { me: Me }) {
   return (
     <div className="space-y-6">
       <header className="rise">
-        <div className="label">02 / obserwowalność</div>
-        <h1 className="font-display text-2xl font-semibold tracking-wider">Alerty</h1>
+        <div className="label">obserwowalność</div>
+        <h1 className="title">Alerty</h1>
       </header>
-      <nav className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-rule">
+      <nav className="tabs" role="tablist">
         {tabs
           .filter((t) => t.show)
           .map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`-mb-px border-b-2 px-4 py-2 font-display text-xs font-semibold tracking-[0.14em] whitespace-nowrap uppercase transition-colors ${
-                tab === t.key ? "border-amber text-ink" : "border-transparent text-ink-3 hover:text-ink"
-              }`}
+              role="tab"
+              aria-selected={tab === t.key}
+              className="tab"
             >
               {t.label}
             </button>
@@ -78,8 +78,8 @@ function Events({ open }: { open: boolean }) {
   if (q.data && list.length === 0) {
     return (
       <div className="panel rise p-10 text-center">
-        <div className="mx-auto mb-3 size-3 rounded-full bg-signal lamp-on text-signal" />
-        <p className="font-display tracking-wider">{open ? "Wszystko w normie" : "Brak zdarzeń"}</p>
+        <div className="mx-auto mb-3 size-3 rounded-full bg-signal text-signal" />
+        <p className="text-[1.0625rem] font-semibold">{open ? "Wszystko w normie" : "Brak zdarzeń"}</p>
         {open && <p className="mt-1 text-sm text-ink-3">Żadna reguła nie jest aktualnie przekroczona.</p>}
       </div>
     );
@@ -98,12 +98,12 @@ function EventRow({ e, delay }: { e: AlertEvent; delay: number }) {
   const info = isInfo(e);
   const lasted = ((e.resolved_at ? new Date(e.resolved_at).getTime() : Date.now()) - new Date(e.started_at).getTime()) / 1000;
   return (
-    <div className={`panel rise flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 ${firing ? (info ? "border-l-2 !border-l-cyan" : "border-l-2 !border-l-alarm") : ""}`} style={{ animationDelay: `${delay}ms` }}>
-      <span className={`inline-block size-2.5 shrink-0 rounded-full ${firing ? (info ? "bg-cyan" : "lamp-on bg-alarm text-alarm") : "bg-signal"}`} />
+    <div className={`panel rise flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 ${firing ? (info ? "shadow-[inset_3px_0_0_var(--color-cyan),var(--card-shadow)]" : "shadow-[inset_3px_0_0_var(--color-alarm),var(--card-shadow)]") : ""}`} style={{ animationDelay: `${delay}ms` }}>
+      <span className={`inline-block size-2.5 shrink-0 rounded-full ${firing ? (info ? "bg-cyan" : "bg-alarm text-alarm") : "bg-signal"}`} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <span className="font-medium">{e.rule_name}</span>
-          <Link to="/hosts/$id" params={{ id: e.agent_id }} className="label hover:!text-amber">
+          <Link to="/hosts/$id" params={{ id: e.agent_id }} className="label hover:!text-accent">
             {e.host_name}
           </Link>
           {e.subject && <span className="readout text-xs text-ink-2">{e.subject}</span>}
@@ -150,7 +150,7 @@ function Rules({ isAdmin }: { isAdmin: boolean }) {
         </p>
         {isAdmin && (
           <button className="btn btn-primary" onClick={() => setEdit(emptyRule())}>
-            + nowa reguła
+            Nowa reguła
           </button>
         )}
       </div>
@@ -187,14 +187,14 @@ function Rules({ isAdmin }: { isAdmin: boolean }) {
                 <td className="px-4 py-2.5">
                   {isAdmin && (
                     <div className="flex justify-end gap-1.5">
-                      <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => toggle.mutate(r)}>
-                        {r.enabled ? "wyłącz" : "włącz"}
+                      <button className="btn btn-sm" onClick={() => toggle.mutate(r)}>
+                        {r.enabled ? "Wyłącz" : "Włącz"}
                       </button>
-                      <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setEdit(r)}>
-                        edytuj
+                      <button className="btn btn-sm" onClick={() => setEdit(r)}>
+                        Edytuj
                       </button>
-                      <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" onClick={() => setDel(r)}>
-                        usuń
+                      <button className="btn btn-danger btn-sm" onClick={() => setDel(r)}>
+                        Usuń
                       </button>
                     </div>
                   )}
@@ -215,7 +215,7 @@ function Rules({ isAdmin }: { isAdmin: boolean }) {
         />
       )}
       {del && (
-        <Confirm title="Usuń regułę" confirmLabel="usuń" danger pending={remove.isPending} error={remove.error} onClose={() => setDel(null)} onConfirm={() => remove.mutate(del.id)}>
+        <Confirm title="Usuń regułę" confirmLabel="Usuń" danger pending={remove.isPending} error={remove.error} onClose={() => setDel(null)} onConfirm={() => remove.mutate(del.id)}>
           <p>
             Reguła <strong className="text-ink">{del.name}</strong> i jej historia zdarzeń zostaną usunięte.
           </p>
@@ -299,7 +299,7 @@ function RuleEditor({
               <label key={c.id} className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  className="accent-amber"
+                  className="accent-accent"
                   checked={r.channels.includes(c.id)}
                   onChange={(e) => setR({ ...r, channels: e.target.checked ? [...r.channels, c.id] : r.channels.filter((x) => x !== c.id) })}
                 />
@@ -311,10 +311,10 @@ function RuleEditor({
         <ErrorText error={save.error} />
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>
-            anuluj
+            Anuluj
           </button>
           <button className="btn btn-primary" disabled={save.isPending}>
-            zapisz
+            Zapisz
           </button>
         </div>
       </form>
@@ -367,7 +367,7 @@ function Channels() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-ink-2">Tokeny i hasła są szyfrowane w bazie huba i nigdy nie wracają do przeglądarki.</p>
         <button className="btn btn-primary" onClick={() => setEdit("new")}>
-          + nowy kanał
+          Nowy kanał
         </button>
       </div>
       <ErrorText error={channels.error} />
@@ -383,14 +383,14 @@ function Channels() {
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button className="btn !px-2 !py-0.5 !text-[10px]" disabled={test.isPending} onClick={() => test.mutate(c.id)}>
-                  test
+                <button className="btn btn-sm" disabled={test.isPending} onClick={() => test.mutate(c.id)}>
+                  Test
                 </button>
-                <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setEdit(c)}>
-                  edytuj
+                <button className="btn btn-sm" onClick={() => setEdit(c)}>
+                  Edytuj
                 </button>
-                <button className="btn btn-danger !px-2 !py-0.5 !text-[10px]" onClick={() => setDel(c)}>
-                  usuń
+                <button className="btn btn-danger btn-sm" onClick={() => setDel(c)}>
+                  Usuń
                 </button>
               </div>
             </div>
@@ -402,7 +402,7 @@ function Channels() {
       </div>
       {edit && <ChannelEditor channel={edit === "new" ? null : edit} onClose={() => setEdit(null)} onSaved={() => (setEdit(null), invalidate())} />}
       {del && (
-        <Confirm title="Usuń kanał" confirmLabel="usuń" danger pending={remove.isPending} error={remove.error} onClose={() => setDel(null)} onConfirm={() => remove.mutate(del.id)}>
+        <Confirm title="Usuń kanał" confirmLabel="Usuń" danger pending={remove.isPending} error={remove.error} onClose={() => setDel(null)} onConfirm={() => remove.mutate(del.id)}>
           <p>
             Kanał <strong className="text-ink">{del.name}</strong> zostanie usunięty i odpięty od reguł.
           </p>
@@ -453,16 +453,16 @@ function ChannelEditor({ channel, onClose, onSaved }: { channel: AlertChannel | 
           ))}
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" className="accent-amber" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+          <input type="checkbox" className="accent-accent" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
           aktywny
         </label>
         <ErrorText error={save.error} />
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>
-            anuluj
+            Anuluj
           </button>
           <button className="btn btn-primary" disabled={save.isPending}>
-            zapisz
+            Zapisz
           </button>
         </div>
       </form>

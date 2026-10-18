@@ -19,12 +19,12 @@ export function AuditPage() {
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label">03 / bezpieczeństwo</div>
-          <h1 className="font-display text-2xl font-semibold tracking-wider">Dziennik audytu</h1>
+          <div className="label">bezpieczeństwo</div>
+          <h1 className="title">Dziennik audytu</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <label className="label flex cursor-pointer items-center gap-2">
-            <input type="checkbox" className="accent-amber" checked={failedOnly} onChange={(e) => setFailedOnly(e.target.checked)} />
+            <input type="checkbox" className="accent-accent" checked={failedOnly} onChange={(e) => setFailedOnly(e.target.checked)} />
             tylko błędy
           </label>
           <input className="field w-64 !py-1.5" placeholder="filtruj…" value={filter} onChange={(e) => setFilter(e.target.value)} />

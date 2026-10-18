@@ -1999,6 +1999,324 @@ func (x *PruneVolumesRequest) GetAll() bool {
 	return false
 }
 
+type GetDiskUsageRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Start a new pass even if the cached result is still fresh. Passes are
+	// rate-limited by the agent.
+	Refresh       bool `protobuf:"varint,1,opt,name=refresh,proto3" json:"refresh,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDiskUsageRequest) Reset() {
+	*x = GetDiskUsageRequest{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDiskUsageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDiskUsageRequest) ProtoMessage() {}
+
+func (x *GetDiskUsageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDiskUsageRequest.ProtoReflect.Descriptor instead.
+func (*GetDiskUsageRequest) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetDiskUsageRequest) GetRefresh() bool {
+	if x != nil {
+		return x.Refresh
+	}
+	return false
+}
+
+type VolumeUsage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// -1 when the driver does not report a size.
+	SizeBytes     int64 `protobuf:"varint,2,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeUsage) Reset() {
+	*x = VolumeUsage{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeUsage) ProtoMessage() {}
+
+func (x *VolumeUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeUsage.ProtoReflect.Descriptor instead.
+func (*VolumeUsage) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *VolumeUsage) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *VolumeUsage) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+type BindUsage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Host path as seen by Docker.
+	Source    string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	SizeBytes int64  `protobuf:"varint,2,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	// The walk stopped before finishing (time budget); size is a lower bound.
+	Partial bool `protobuf:"varint,3,opt,name=partial,proto3" json:"partial,omitempty"`
+	// Set when the path could not be measured (e.g. a system path).
+	Error         string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BindUsage) Reset() {
+	*x = BindUsage{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindUsage) ProtoMessage() {}
+
+func (x *BindUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindUsage.ProtoReflect.Descriptor instead.
+func (*BindUsage) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *BindUsage) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *BindUsage) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *BindUsage) GetPartial() bool {
+	if x != nil {
+		return x.Partial
+	}
+	return false
+}
+
+func (x *BindUsage) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type ContainerDiskUsage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Writable layer only.
+	SizeRwBytes int64 `protobuf:"varint,2,opt,name=size_rw_bytes,json=sizeRwBytes,proto3" json:"size_rw_bytes,omitempty"`
+	// Writable layer plus the image.
+	SizeRootFsBytes int64 `protobuf:"varint,3,opt,name=size_root_fs_bytes,json=sizeRootFsBytes,proto3" json:"size_root_fs_bytes,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ContainerDiskUsage) Reset() {
+	*x = ContainerDiskUsage{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContainerDiskUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContainerDiskUsage) ProtoMessage() {}
+
+func (x *ContainerDiskUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContainerDiskUsage.ProtoReflect.Descriptor instead.
+func (*ContainerDiskUsage) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *ContainerDiskUsage) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ContainerDiskUsage) GetSizeRwBytes() int64 {
+	if x != nil {
+		return x.SizeRwBytes
+	}
+	return 0
+}
+
+func (x *ContainerDiskUsage) GetSizeRootFsBytes() int64 {
+	if x != nil {
+		return x.SizeRootFsBytes
+	}
+	return 0
+}
+
+type GetDiskUsageResponse struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Volumes    []*VolumeUsage         `protobuf:"bytes,1,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	Binds      []*BindUsage           `protobuf:"bytes,2,rep,name=binds,proto3" json:"binds,omitempty"`
+	Containers []*ContainerDiskUsage  `protobuf:"bytes,3,rep,name=containers,proto3" json:"containers,omitempty"`
+	// When the returned data was computed; 0 if no pass has finished yet.
+	ComputedUnix int64 `protobuf:"varint,4,opt,name=computed_unix,json=computedUnix,proto3" json:"computed_unix,omitempty"`
+	// A pass is running; poll again for fresher data.
+	Computing     bool   `protobuf:"varint,5,opt,name=computing,proto3" json:"computing,omitempty"`
+	Error         string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDiskUsageResponse) Reset() {
+	*x = GetDiskUsageResponse{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDiskUsageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDiskUsageResponse) ProtoMessage() {}
+
+func (x *GetDiskUsageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDiskUsageResponse.ProtoReflect.Descriptor instead.
+func (*GetDiskUsageResponse) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *GetDiskUsageResponse) GetVolumes() []*VolumeUsage {
+	if x != nil {
+		return x.Volumes
+	}
+	return nil
+}
+
+func (x *GetDiskUsageResponse) GetBinds() []*BindUsage {
+	if x != nil {
+		return x.Binds
+	}
+	return nil
+}
+
+func (x *GetDiskUsageResponse) GetContainers() []*ContainerDiskUsage {
+	if x != nil {
+		return x.Containers
+	}
+	return nil
+}
+
+func (x *GetDiskUsageResponse) GetComputedUnix() int64 {
+	if x != nil {
+		return x.ComputedUnix
+	}
+	return 0
+}
+
+func (x *GetDiskUsageResponse) GetComputing() bool {
+	if x != nil {
+		return x.Computing
+	}
+	return false
+}
+
+func (x *GetDiskUsageResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 type PruneImagesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Result        *PruneResult           `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
@@ -2008,7 +2326,7 @@ type PruneImagesResponse struct {
 
 func (x *PruneImagesResponse) Reset() {
 	*x = PruneImagesResponse{}
-	mi := &file_nexos_v1_resources_proto_msgTypes[36]
+	mi := &file_nexos_v1_resources_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2020,7 +2338,7 @@ func (x *PruneImagesResponse) String() string {
 func (*PruneImagesResponse) ProtoMessage() {}
 
 func (x *PruneImagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nexos_v1_resources_proto_msgTypes[36]
+	mi := &file_nexos_v1_resources_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2033,7 +2351,7 @@ func (x *PruneImagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruneImagesResponse.ProtoReflect.Descriptor instead.
 func (*PruneImagesResponse) Descriptor() ([]byte, []int) {
-	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{36}
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *PruneImagesResponse) GetResult() *PruneResult {
@@ -2052,7 +2370,7 @@ type PruneNetworksResponse struct {
 
 func (x *PruneNetworksResponse) Reset() {
 	*x = PruneNetworksResponse{}
-	mi := &file_nexos_v1_resources_proto_msgTypes[37]
+	mi := &file_nexos_v1_resources_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2064,7 +2382,7 @@ func (x *PruneNetworksResponse) String() string {
 func (*PruneNetworksResponse) ProtoMessage() {}
 
 func (x *PruneNetworksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nexos_v1_resources_proto_msgTypes[37]
+	mi := &file_nexos_v1_resources_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2077,7 +2395,7 @@ func (x *PruneNetworksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruneNetworksResponse.ProtoReflect.Descriptor instead.
 func (*PruneNetworksResponse) Descriptor() ([]byte, []int) {
-	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{37}
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *PruneNetworksResponse) GetResult() *PruneResult {
@@ -2096,7 +2414,7 @@ type PruneVolumesResponse struct {
 
 func (x *PruneVolumesResponse) Reset() {
 	*x = PruneVolumesResponse{}
-	mi := &file_nexos_v1_resources_proto_msgTypes[38]
+	mi := &file_nexos_v1_resources_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2108,7 +2426,7 @@ func (x *PruneVolumesResponse) String() string {
 func (*PruneVolumesResponse) ProtoMessage() {}
 
 func (x *PruneVolumesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nexos_v1_resources_proto_msgTypes[38]
+	mi := &file_nexos_v1_resources_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2121,7 +2439,7 @@ func (x *PruneVolumesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruneVolumesResponse.ProtoReflect.Descriptor instead.
 func (*PruneVolumesResponse) Descriptor() ([]byte, []int) {
-	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{38}
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *PruneVolumesResponse) GetResult() *PruneResult {
@@ -2140,7 +2458,7 @@ type CheckImageUpdatesRequest struct {
 
 func (x *CheckImageUpdatesRequest) Reset() {
 	*x = CheckImageUpdatesRequest{}
-	mi := &file_nexos_v1_resources_proto_msgTypes[39]
+	mi := &file_nexos_v1_resources_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2152,7 +2470,7 @@ func (x *CheckImageUpdatesRequest) String() string {
 func (*CheckImageUpdatesRequest) ProtoMessage() {}
 
 func (x *CheckImageUpdatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_nexos_v1_resources_proto_msgTypes[39]
+	mi := &file_nexos_v1_resources_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2165,7 +2483,7 @@ func (x *CheckImageUpdatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckImageUpdatesRequest.ProtoReflect.Descriptor instead.
 func (*CheckImageUpdatesRequest) Descriptor() ([]byte, []int) {
-	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{39}
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *CheckImageUpdatesRequest) GetReferences() []string {
@@ -2195,7 +2513,7 @@ type ImageUpdate struct {
 
 func (x *ImageUpdate) Reset() {
 	*x = ImageUpdate{}
-	mi := &file_nexos_v1_resources_proto_msgTypes[40]
+	mi := &file_nexos_v1_resources_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2207,7 +2525,7 @@ func (x *ImageUpdate) String() string {
 func (*ImageUpdate) ProtoMessage() {}
 
 func (x *ImageUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_nexos_v1_resources_proto_msgTypes[40]
+	mi := &file_nexos_v1_resources_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2220,7 +2538,7 @@ func (x *ImageUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageUpdate.ProtoReflect.Descriptor instead.
 func (*ImageUpdate) Descriptor() ([]byte, []int) {
-	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{40}
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ImageUpdate) GetReference() string {
@@ -2288,7 +2606,7 @@ type CheckImageUpdatesResponse struct {
 
 func (x *CheckImageUpdatesResponse) Reset() {
 	*x = CheckImageUpdatesResponse{}
-	mi := &file_nexos_v1_resources_proto_msgTypes[41]
+	mi := &file_nexos_v1_resources_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2300,7 +2618,7 @@ func (x *CheckImageUpdatesResponse) String() string {
 func (*CheckImageUpdatesResponse) ProtoMessage() {}
 
 func (x *CheckImageUpdatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nexos_v1_resources_proto_msgTypes[41]
+	mi := &file_nexos_v1_resources_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2313,7 +2631,7 @@ func (x *CheckImageUpdatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckImageUpdatesResponse.ProtoReflect.Descriptor instead.
 func (*CheckImageUpdatesResponse) Descriptor() ([]byte, []int) {
-	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{41}
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *CheckImageUpdatesResponse) GetUpdates() []*ImageUpdate {
@@ -2481,7 +2799,32 @@ const file_nexos_v1_resources_proto_rawDesc = "" +
 	"\x05force\x18\x02 \x01(\bR\x05force\"\x16\n" +
 	"\x14RemoveVolumeResponse\"'\n" +
 	"\x13PruneVolumesRequest\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\"D\n" +
+	"\x03all\x18\x01 \x01(\bR\x03all\"/\n" +
+	"\x13GetDiskUsageRequest\x12\x18\n" +
+	"\arefresh\x18\x01 \x01(\bR\arefresh\"@\n" +
+	"\vVolumeUsage\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x02 \x01(\x03R\tsizeBytes\"r\n" +
+	"\tBindUsage\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x02 \x01(\x03R\tsizeBytes\x12\x18\n" +
+	"\apartial\x18\x03 \x01(\bR\apartial\x12\x14\n" +
+	"\x05error\x18\x04 \x01(\tR\x05error\"u\n" +
+	"\x12ContainerDiskUsage\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
+	"\rsize_rw_bytes\x18\x02 \x01(\x03R\vsizeRwBytes\x12+\n" +
+	"\x12size_root_fs_bytes\x18\x03 \x01(\x03R\x0fsizeRootFsBytes\"\x89\x02\n" +
+	"\x14GetDiskUsageResponse\x12/\n" +
+	"\avolumes\x18\x01 \x03(\v2\x15.nexos.v1.VolumeUsageR\avolumes\x12)\n" +
+	"\x05binds\x18\x02 \x03(\v2\x13.nexos.v1.BindUsageR\x05binds\x12<\n" +
+	"\n" +
+	"containers\x18\x03 \x03(\v2\x1c.nexos.v1.ContainerDiskUsageR\n" +
+	"containers\x12#\n" +
+	"\rcomputed_unix\x18\x04 \x01(\x03R\fcomputedUnix\x12\x1c\n" +
+	"\tcomputing\x18\x05 \x01(\bR\tcomputing\x12\x14\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\"D\n" +
 	"\x13PruneImagesResponse\x12-\n" +
 	"\x06result\x18\x01 \x01(\v2\x15.nexos.v1.PruneResultR\x06result\"F\n" +
 	"\x15PruneNetworksResponse\x12-\n" +
@@ -2520,13 +2863,14 @@ const file_nexos_v1_resources_proto_rawDesc = "" +
 	"\rRemoveNetwork\x12\x1e.nexos.v1.RemoveNetworkRequest\x1a\x1f.nexos.v1.RemoveNetworkResponse\x12S\n" +
 	"\x0eConnectNetwork\x12\x1f.nexos.v1.ConnectNetworkRequest\x1a .nexos.v1.ConnectNetworkResponse\x12\\\n" +
 	"\x11DisconnectNetwork\x12\".nexos.v1.DisconnectNetworkRequest\x1a#.nexos.v1.DisconnectNetworkResponse\x12P\n" +
-	"\rPruneNetworks\x12\x1e.nexos.v1.PruneNetworksRequest\x1a\x1f.nexos.v1.PruneNetworksResponse2\x9a\x03\n" +
+	"\rPruneNetworks\x12\x1e.nexos.v1.PruneNetworksRequest\x1a\x1f.nexos.v1.PruneNetworksResponse2\xe9\x03\n" +
 	"\rVolumeService\x12J\n" +
 	"\vListVolumes\x12\x1c.nexos.v1.ListVolumesRequest\x1a\x1d.nexos.v1.ListVolumesResponse\x12P\n" +
 	"\rInspectVolume\x12\x1e.nexos.v1.InspectVolumeRequest\x1a\x1f.nexos.v1.InspectVolumeResponse\x12M\n" +
 	"\fCreateVolume\x12\x1d.nexos.v1.CreateVolumeRequest\x1a\x1e.nexos.v1.CreateVolumeResponse\x12M\n" +
 	"\fRemoveVolume\x12\x1d.nexos.v1.RemoveVolumeRequest\x1a\x1e.nexos.v1.RemoveVolumeResponse\x12M\n" +
-	"\fPruneVolumes\x12\x1d.nexos.v1.PruneVolumesRequest\x1a\x1e.nexos.v1.PruneVolumesResponseB%Z#nexos/internal/gen/nexos/v1;nexosv1b\x06proto3"
+	"\fPruneVolumes\x12\x1d.nexos.v1.PruneVolumesRequest\x1a\x1e.nexos.v1.PruneVolumesResponse\x12M\n" +
+	"\fGetDiskUsage\x12\x1d.nexos.v1.GetDiskUsageRequest\x1a\x1e.nexos.v1.GetDiskUsageResponseB%Z#nexos/internal/gen/nexos/v1;nexosv1b\x06proto3"
 
 var (
 	file_nexos_v1_resources_proto_rawDescOnce sync.Once
@@ -2540,7 +2884,7 @@ func file_nexos_v1_resources_proto_rawDescGZIP() []byte {
 	return file_nexos_v1_resources_proto_rawDescData
 }
 
-var file_nexos_v1_resources_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
+var file_nexos_v1_resources_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
 var file_nexos_v1_resources_proto_goTypes = []any{
 	(*Image)(nil),                     // 0: nexos.v1.Image
 	(*ListImagesRequest)(nil),         // 1: nexos.v1.ListImagesRequest
@@ -2578,78 +2922,88 @@ var file_nexos_v1_resources_proto_goTypes = []any{
 	(*RemoveVolumeRequest)(nil),       // 33: nexos.v1.RemoveVolumeRequest
 	(*RemoveVolumeResponse)(nil),      // 34: nexos.v1.RemoveVolumeResponse
 	(*PruneVolumesRequest)(nil),       // 35: nexos.v1.PruneVolumesRequest
-	(*PruneImagesResponse)(nil),       // 36: nexos.v1.PruneImagesResponse
-	(*PruneNetworksResponse)(nil),     // 37: nexos.v1.PruneNetworksResponse
-	(*PruneVolumesResponse)(nil),      // 38: nexos.v1.PruneVolumesResponse
-	(*CheckImageUpdatesRequest)(nil),  // 39: nexos.v1.CheckImageUpdatesRequest
-	(*ImageUpdate)(nil),               // 40: nexos.v1.ImageUpdate
-	(*CheckImageUpdatesResponse)(nil), // 41: nexos.v1.CheckImageUpdatesResponse
-	nil,                               // 42: nexos.v1.Image.LabelsEntry
-	nil,                               // 43: nexos.v1.Network.LabelsEntry
-	nil,                               // 44: nexos.v1.CreateNetworkRequest.OptionsEntry
-	nil,                               // 45: nexos.v1.Volume.LabelsEntry
-	nil,                               // 46: nexos.v1.Volume.OptionsEntry
-	nil,                               // 47: nexos.v1.CreateVolumeRequest.DriverOptionsEntry
-	nil,                               // 48: nexos.v1.CreateVolumeRequest.LabelsEntry
+	(*GetDiskUsageRequest)(nil),       // 36: nexos.v1.GetDiskUsageRequest
+	(*VolumeUsage)(nil),               // 37: nexos.v1.VolumeUsage
+	(*BindUsage)(nil),                 // 38: nexos.v1.BindUsage
+	(*ContainerDiskUsage)(nil),        // 39: nexos.v1.ContainerDiskUsage
+	(*GetDiskUsageResponse)(nil),      // 40: nexos.v1.GetDiskUsageResponse
+	(*PruneImagesResponse)(nil),       // 41: nexos.v1.PruneImagesResponse
+	(*PruneNetworksResponse)(nil),     // 42: nexos.v1.PruneNetworksResponse
+	(*PruneVolumesResponse)(nil),      // 43: nexos.v1.PruneVolumesResponse
+	(*CheckImageUpdatesRequest)(nil),  // 44: nexos.v1.CheckImageUpdatesRequest
+	(*ImageUpdate)(nil),               // 45: nexos.v1.ImageUpdate
+	(*CheckImageUpdatesResponse)(nil), // 46: nexos.v1.CheckImageUpdatesResponse
+	nil,                               // 47: nexos.v1.Image.LabelsEntry
+	nil,                               // 48: nexos.v1.Network.LabelsEntry
+	nil,                               // 49: nexos.v1.CreateNetworkRequest.OptionsEntry
+	nil,                               // 50: nexos.v1.Volume.LabelsEntry
+	nil,                               // 51: nexos.v1.Volume.OptionsEntry
+	nil,                               // 52: nexos.v1.CreateVolumeRequest.DriverOptionsEntry
+	nil,                               // 53: nexos.v1.CreateVolumeRequest.LabelsEntry
 }
 var file_nexos_v1_resources_proto_depIdxs = []int32{
-	42, // 0: nexos.v1.Image.labels:type_name -> nexos.v1.Image.LabelsEntry
+	47, // 0: nexos.v1.Image.labels:type_name -> nexos.v1.Image.LabelsEntry
 	0,  // 1: nexos.v1.ListImagesResponse.images:type_name -> nexos.v1.Image
-	43, // 2: nexos.v1.Network.labels:type_name -> nexos.v1.Network.LabelsEntry
+	48, // 2: nexos.v1.Network.labels:type_name -> nexos.v1.Network.LabelsEntry
 	11, // 3: nexos.v1.Network.endpoints:type_name -> nexos.v1.NetworkEndpoint
 	12, // 4: nexos.v1.ListNetworksResponse.networks:type_name -> nexos.v1.Network
-	44, // 5: nexos.v1.CreateNetworkRequest.options:type_name -> nexos.v1.CreateNetworkRequest.OptionsEntry
-	45, // 6: nexos.v1.Volume.labels:type_name -> nexos.v1.Volume.LabelsEntry
-	46, // 7: nexos.v1.Volume.options:type_name -> nexos.v1.Volume.OptionsEntry
+	49, // 5: nexos.v1.CreateNetworkRequest.options:type_name -> nexos.v1.CreateNetworkRequest.OptionsEntry
+	50, // 6: nexos.v1.Volume.labels:type_name -> nexos.v1.Volume.LabelsEntry
+	51, // 7: nexos.v1.Volume.options:type_name -> nexos.v1.Volume.OptionsEntry
 	26, // 8: nexos.v1.ListVolumesResponse.volumes:type_name -> nexos.v1.Volume
-	47, // 9: nexos.v1.CreateVolumeRequest.driver_options:type_name -> nexos.v1.CreateVolumeRequest.DriverOptionsEntry
-	48, // 10: nexos.v1.CreateVolumeRequest.labels:type_name -> nexos.v1.CreateVolumeRequest.LabelsEntry
+	52, // 9: nexos.v1.CreateVolumeRequest.driver_options:type_name -> nexos.v1.CreateVolumeRequest.DriverOptionsEntry
+	53, // 10: nexos.v1.CreateVolumeRequest.labels:type_name -> nexos.v1.CreateVolumeRequest.LabelsEntry
 	26, // 11: nexos.v1.CreateVolumeResponse.volume:type_name -> nexos.v1.Volume
-	10, // 12: nexos.v1.PruneImagesResponse.result:type_name -> nexos.v1.PruneResult
-	10, // 13: nexos.v1.PruneNetworksResponse.result:type_name -> nexos.v1.PruneResult
-	10, // 14: nexos.v1.PruneVolumesResponse.result:type_name -> nexos.v1.PruneResult
-	40, // 15: nexos.v1.CheckImageUpdatesResponse.updates:type_name -> nexos.v1.ImageUpdate
-	1,  // 16: nexos.v1.ImageService.ListImages:input_type -> nexos.v1.ListImagesRequest
-	3,  // 17: nexos.v1.ImageService.InspectImage:input_type -> nexos.v1.InspectImageRequest
-	5,  // 18: nexos.v1.ImageService.PullImage:input_type -> nexos.v1.PullImageRequest
-	7,  // 19: nexos.v1.ImageService.RemoveImage:input_type -> nexos.v1.RemoveImageRequest
-	9,  // 20: nexos.v1.ImageService.PruneImages:input_type -> nexos.v1.PruneImagesRequest
-	39, // 21: nexos.v1.ImageService.CheckImageUpdates:input_type -> nexos.v1.CheckImageUpdatesRequest
-	13, // 22: nexos.v1.NetworkService.ListNetworks:input_type -> nexos.v1.ListNetworksRequest
-	15, // 23: nexos.v1.NetworkService.InspectNetwork:input_type -> nexos.v1.InspectNetworkRequest
-	17, // 24: nexos.v1.NetworkService.CreateNetwork:input_type -> nexos.v1.CreateNetworkRequest
-	19, // 25: nexos.v1.NetworkService.RemoveNetwork:input_type -> nexos.v1.RemoveNetworkRequest
-	21, // 26: nexos.v1.NetworkService.ConnectNetwork:input_type -> nexos.v1.ConnectNetworkRequest
-	23, // 27: nexos.v1.NetworkService.DisconnectNetwork:input_type -> nexos.v1.DisconnectNetworkRequest
-	25, // 28: nexos.v1.NetworkService.PruneNetworks:input_type -> nexos.v1.PruneNetworksRequest
-	27, // 29: nexos.v1.VolumeService.ListVolumes:input_type -> nexos.v1.ListVolumesRequest
-	29, // 30: nexos.v1.VolumeService.InspectVolume:input_type -> nexos.v1.InspectVolumeRequest
-	31, // 31: nexos.v1.VolumeService.CreateVolume:input_type -> nexos.v1.CreateVolumeRequest
-	33, // 32: nexos.v1.VolumeService.RemoveVolume:input_type -> nexos.v1.RemoveVolumeRequest
-	35, // 33: nexos.v1.VolumeService.PruneVolumes:input_type -> nexos.v1.PruneVolumesRequest
-	2,  // 34: nexos.v1.ImageService.ListImages:output_type -> nexos.v1.ListImagesResponse
-	4,  // 35: nexos.v1.ImageService.InspectImage:output_type -> nexos.v1.InspectImageResponse
-	6,  // 36: nexos.v1.ImageService.PullImage:output_type -> nexos.v1.PullImageResponse
-	8,  // 37: nexos.v1.ImageService.RemoveImage:output_type -> nexos.v1.RemoveImageResponse
-	36, // 38: nexos.v1.ImageService.PruneImages:output_type -> nexos.v1.PruneImagesResponse
-	41, // 39: nexos.v1.ImageService.CheckImageUpdates:output_type -> nexos.v1.CheckImageUpdatesResponse
-	14, // 40: nexos.v1.NetworkService.ListNetworks:output_type -> nexos.v1.ListNetworksResponse
-	16, // 41: nexos.v1.NetworkService.InspectNetwork:output_type -> nexos.v1.InspectNetworkResponse
-	18, // 42: nexos.v1.NetworkService.CreateNetwork:output_type -> nexos.v1.CreateNetworkResponse
-	20, // 43: nexos.v1.NetworkService.RemoveNetwork:output_type -> nexos.v1.RemoveNetworkResponse
-	22, // 44: nexos.v1.NetworkService.ConnectNetwork:output_type -> nexos.v1.ConnectNetworkResponse
-	24, // 45: nexos.v1.NetworkService.DisconnectNetwork:output_type -> nexos.v1.DisconnectNetworkResponse
-	37, // 46: nexos.v1.NetworkService.PruneNetworks:output_type -> nexos.v1.PruneNetworksResponse
-	28, // 47: nexos.v1.VolumeService.ListVolumes:output_type -> nexos.v1.ListVolumesResponse
-	30, // 48: nexos.v1.VolumeService.InspectVolume:output_type -> nexos.v1.InspectVolumeResponse
-	32, // 49: nexos.v1.VolumeService.CreateVolume:output_type -> nexos.v1.CreateVolumeResponse
-	34, // 50: nexos.v1.VolumeService.RemoveVolume:output_type -> nexos.v1.RemoveVolumeResponse
-	38, // 51: nexos.v1.VolumeService.PruneVolumes:output_type -> nexos.v1.PruneVolumesResponse
-	34, // [34:52] is the sub-list for method output_type
-	16, // [16:34] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	37, // 12: nexos.v1.GetDiskUsageResponse.volumes:type_name -> nexos.v1.VolumeUsage
+	38, // 13: nexos.v1.GetDiskUsageResponse.binds:type_name -> nexos.v1.BindUsage
+	39, // 14: nexos.v1.GetDiskUsageResponse.containers:type_name -> nexos.v1.ContainerDiskUsage
+	10, // 15: nexos.v1.PruneImagesResponse.result:type_name -> nexos.v1.PruneResult
+	10, // 16: nexos.v1.PruneNetworksResponse.result:type_name -> nexos.v1.PruneResult
+	10, // 17: nexos.v1.PruneVolumesResponse.result:type_name -> nexos.v1.PruneResult
+	45, // 18: nexos.v1.CheckImageUpdatesResponse.updates:type_name -> nexos.v1.ImageUpdate
+	1,  // 19: nexos.v1.ImageService.ListImages:input_type -> nexos.v1.ListImagesRequest
+	3,  // 20: nexos.v1.ImageService.InspectImage:input_type -> nexos.v1.InspectImageRequest
+	5,  // 21: nexos.v1.ImageService.PullImage:input_type -> nexos.v1.PullImageRequest
+	7,  // 22: nexos.v1.ImageService.RemoveImage:input_type -> nexos.v1.RemoveImageRequest
+	9,  // 23: nexos.v1.ImageService.PruneImages:input_type -> nexos.v1.PruneImagesRequest
+	44, // 24: nexos.v1.ImageService.CheckImageUpdates:input_type -> nexos.v1.CheckImageUpdatesRequest
+	13, // 25: nexos.v1.NetworkService.ListNetworks:input_type -> nexos.v1.ListNetworksRequest
+	15, // 26: nexos.v1.NetworkService.InspectNetwork:input_type -> nexos.v1.InspectNetworkRequest
+	17, // 27: nexos.v1.NetworkService.CreateNetwork:input_type -> nexos.v1.CreateNetworkRequest
+	19, // 28: nexos.v1.NetworkService.RemoveNetwork:input_type -> nexos.v1.RemoveNetworkRequest
+	21, // 29: nexos.v1.NetworkService.ConnectNetwork:input_type -> nexos.v1.ConnectNetworkRequest
+	23, // 30: nexos.v1.NetworkService.DisconnectNetwork:input_type -> nexos.v1.DisconnectNetworkRequest
+	25, // 31: nexos.v1.NetworkService.PruneNetworks:input_type -> nexos.v1.PruneNetworksRequest
+	27, // 32: nexos.v1.VolumeService.ListVolumes:input_type -> nexos.v1.ListVolumesRequest
+	29, // 33: nexos.v1.VolumeService.InspectVolume:input_type -> nexos.v1.InspectVolumeRequest
+	31, // 34: nexos.v1.VolumeService.CreateVolume:input_type -> nexos.v1.CreateVolumeRequest
+	33, // 35: nexos.v1.VolumeService.RemoveVolume:input_type -> nexos.v1.RemoveVolumeRequest
+	35, // 36: nexos.v1.VolumeService.PruneVolumes:input_type -> nexos.v1.PruneVolumesRequest
+	36, // 37: nexos.v1.VolumeService.GetDiskUsage:input_type -> nexos.v1.GetDiskUsageRequest
+	2,  // 38: nexos.v1.ImageService.ListImages:output_type -> nexos.v1.ListImagesResponse
+	4,  // 39: nexos.v1.ImageService.InspectImage:output_type -> nexos.v1.InspectImageResponse
+	6,  // 40: nexos.v1.ImageService.PullImage:output_type -> nexos.v1.PullImageResponse
+	8,  // 41: nexos.v1.ImageService.RemoveImage:output_type -> nexos.v1.RemoveImageResponse
+	41, // 42: nexos.v1.ImageService.PruneImages:output_type -> nexos.v1.PruneImagesResponse
+	46, // 43: nexos.v1.ImageService.CheckImageUpdates:output_type -> nexos.v1.CheckImageUpdatesResponse
+	14, // 44: nexos.v1.NetworkService.ListNetworks:output_type -> nexos.v1.ListNetworksResponse
+	16, // 45: nexos.v1.NetworkService.InspectNetwork:output_type -> nexos.v1.InspectNetworkResponse
+	18, // 46: nexos.v1.NetworkService.CreateNetwork:output_type -> nexos.v1.CreateNetworkResponse
+	20, // 47: nexos.v1.NetworkService.RemoveNetwork:output_type -> nexos.v1.RemoveNetworkResponse
+	22, // 48: nexos.v1.NetworkService.ConnectNetwork:output_type -> nexos.v1.ConnectNetworkResponse
+	24, // 49: nexos.v1.NetworkService.DisconnectNetwork:output_type -> nexos.v1.DisconnectNetworkResponse
+	42, // 50: nexos.v1.NetworkService.PruneNetworks:output_type -> nexos.v1.PruneNetworksResponse
+	28, // 51: nexos.v1.VolumeService.ListVolumes:output_type -> nexos.v1.ListVolumesResponse
+	30, // 52: nexos.v1.VolumeService.InspectVolume:output_type -> nexos.v1.InspectVolumeResponse
+	32, // 53: nexos.v1.VolumeService.CreateVolume:output_type -> nexos.v1.CreateVolumeResponse
+	34, // 54: nexos.v1.VolumeService.RemoveVolume:output_type -> nexos.v1.RemoveVolumeResponse
+	43, // 55: nexos.v1.VolumeService.PruneVolumes:output_type -> nexos.v1.PruneVolumesResponse
+	40, // 56: nexos.v1.VolumeService.GetDiskUsage:output_type -> nexos.v1.GetDiskUsageResponse
+	38, // [38:57] is the sub-list for method output_type
+	19, // [19:38] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_nexos_v1_resources_proto_init() }
@@ -2663,7 +3017,7 @@ func file_nexos_v1_resources_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_nexos_v1_resources_proto_rawDesc), len(file_nexos_v1_resources_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   49,
+			NumMessages:   54,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

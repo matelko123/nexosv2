@@ -376,6 +376,23 @@ func (s *Server) handleListVolumes(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, listOrEmpty(resp.GetVolumes()))
 }
 
+// handleDiskUsage reports sizes of volumes, bind mounts and writable layers.
+// The agent computes them in the background; ?refresh=1 asks for a new pass.
+func (s *Server) handleDiskUsage(w http.ResponseWriter, r *http.Request) {
+	cc, ok := s.agentConn(w, r)
+	if !ok {
+		return
+	}
+	ctx, cancel := rpcCtx(r)
+	defer cancel()
+	resp, err := nexosv1.NewVolumeServiceClient(cc).GetDiskUsage(ctx, &nexosv1.GetDiskUsageRequest{Refresh: r.URL.Query().Get("refresh") == "1"})
+	if err != nil {
+		writeGRPCError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func (s *Server) handleInspectVolume(w http.ResponseWriter, r *http.Request) {
 	cc, ok := s.agentConn(w, r)
 	if !ok {

@@ -382,6 +382,23 @@ export interface ContainerPoint {
   net_tx: number;
 }
 
+export interface ContainerTotals {
+  points: ContainerPoint[];
+  /** Bytes transferred within the requested range. */
+  rx_bytes: number;
+  tx_bytes: number;
+}
+
+export interface DiskUsage {
+  /** size_bytes is -1 when the volume driver does not report it. */
+  volumes?: { name: string; size_bytes?: number }[];
+  binds?: { source: string; size_bytes?: number; partial?: boolean; error?: string }[];
+  containers?: { id: string; size_rw_bytes?: number; size_root_fs_bytes?: number }[];
+  computed_unix?: number;
+  computing?: boolean;
+  error?: string;
+}
+
 export interface HostProcess {
   pid: number;
   ppid?: number;

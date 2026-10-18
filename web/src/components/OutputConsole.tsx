@@ -21,7 +21,7 @@ export function OutputConsole({ run, onClose }: { run: RunState; onClose?: () =>
       <div className="flex items-center justify-between gap-3 border-b border-rule px-3 py-2">
         <span className="inline-flex items-center gap-2">
           <span
-            className={`inline-block size-2 rounded-full ${run.running ? "lamp-on bg-warn text-warn" : ok ? "bg-signal" : "bg-alarm"}`}
+            className={`inline-block size-2 rounded-full ${run.running ? "bg-warn text-warn" : ok ? "bg-signal" : "bg-alarm"}`}
           />
           <span className="label !text-ink-2">{run.title}</span>
         </span>
@@ -38,7 +38,7 @@ export function OutputConsole({ run, onClose }: { run: RunState; onClose?: () =>
       </div>
       <div ref={box} className="readout max-h-80 overflow-auto bg-chassis px-3 py-2 text-[12px] leading-[1.55] break-all whitespace-pre-wrap">
         {run.lines.map((l, i) => (
-          <div key={i} className={l.startsWith("$ ") ? "text-amber" : /error|failed|denied/i.test(l) ? "text-[#ff9a8f]" : "text-ink-2"}>
+          <div key={i} className={l.startsWith("$ ") ? "text-accent" : /error|failed|denied/i.test(l) ? "text-alarm" : "text-ink-2"}>
             {l}
           </div>
         ))}

@@ -7,6 +7,8 @@ import type {
   ChannelType,
   Container,
   ContainerPoint,
+  ContainerTotals,
+  DiskUsage,
   HostProcess,
   PackageReport,
   Role,
@@ -168,6 +170,9 @@ export const observability = {
   checkUpdates: (h: string) => request<ImageUpdateInfo[]>("POST", `/hosts/${h}/updates/check`),
   containerHistory: (h: string, name: string, range: string) =>
     request<ContainerPoint[]>("GET", `/hosts/${h}/container-history/${encodeURIComponent(name)}?range=${range}`),
+  containersHistory: (h: string, names: string[], range: string) =>
+    request<ContainerTotals>("GET", `/hosts/${h}/container-history?names=${names.map(encodeURIComponent).join(",")}&range=${range}`),
+  diskUsage: (h: string, refresh = false) => request<DiskUsage>("GET", `/hosts/${h}/disk-usage${refresh ? "?refresh=1" : ""}`),
 
   alerts: (state: "open" | "all") => request<AlertEvent[]>("GET", `/alerts?state=${state}&limit=300`),
   rules: () => request<{ rules: AlertRule[]; types: Record<string, string> }>("GET", "/alerts/rules"),

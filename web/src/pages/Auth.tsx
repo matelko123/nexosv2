@@ -4,30 +4,27 @@ import { api, loginWithPasskey, passkeysSupported, usersApi } from "../lib/api";
 import { ErrorText, Field } from "../components/ui";
 
 function Frame({ step, title, children }: { step: string; title: string; children: ReactNode }) {
+  // Two-step flows (setup, invitation) show where the user is.
+  const n = step.match(/^(?:SETUP|INVITE) \/ 0(\d)$/)?.[1];
   return (
     <div className="grid min-h-screen place-items-center px-4 py-10">
-      <div className="w-full max-w-[420px]">
-        <div className="rise mb-6 flex items-end justify-between">
-          <div>
-            <div className="font-display text-3xl font-semibold tracking-[0.2em]">
-              NEX<span className="text-amber">OS</span>
-            </div>
-            <div className="label mt-1">homelab control</div>
-          </div>
-          <div className="label readout text-right">{step}</div>
+      <div className="w-full max-w-[400px]">
+        <div className="rise mb-8 flex flex-col items-center text-center">
+          <img src="/favicon.svg" alt="" className="size-16 rounded-[16px] shadow-[0_8px_24px_-8px_rgb(0_0_0/0.4)]" />
+          <div className="mt-4 font-display text-[1.375rem] font-semibold tracking-[-0.018em]">NexOS</div>
+          <div className="text-sm text-ink-3">Zarządzanie homelabem</div>
         </div>
-        <div className="panel rise overflow-hidden" style={{ animationDelay: "80ms" }}>
-          {/* Scan sweep across the top edge. */}
-          <div className="relative h-px overflow-hidden bg-rule">
-            <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-amber to-transparent [animation:sweep_2.8s_linear_infinite]" />
-          </div>
-          <div className="space-y-5 p-6">
-            <h1 className="font-display text-lg font-semibold tracking-wider">{title}</h1>
+        <div className="panel rise" style={{ animationDelay: "60ms" }}>
+          <div className="space-y-5 p-6 sm:p-7">
+            <div>
+              {n && <div className="label mb-1">Krok {n} z 2</div>}
+              <h1 className="text-[1.25rem] font-semibold tracking-[-0.017em]">{title}</h1>
+            </div>
             {children}
           </div>
         </div>
-        <p className="label rise mt-4 text-center" style={{ animationDelay: "160ms" }}>
-          mTLS · WireGuard · TOTP
+        <p className="rise mt-5 text-center text-xs text-ink-3" style={{ animationDelay: "120ms" }}>
+          Połączenia chronione przez mTLS, WireGuard i TOTP
         </p>
       </div>
     </div>
@@ -39,7 +36,7 @@ const codeInput = {
   autoComplete: "one-time-code",
   pattern: "[0-9]{6}",
   maxLength: 6,
-  className: "field readout text-center text-2xl tracking-[0.6em]",
+  className: "field readout text-center text-2xl tracking-[0.5em]",
 };
 
 export function LoginPage() {
@@ -74,7 +71,7 @@ export function LoginPage() {
         </Field>
         <ErrorText error={login.error} />
         <button className="btn btn-primary w-full" disabled={login.isPending}>
-          {login.isPending ? "weryfikacja…" : "Zaloguj"}
+          {login.isPending ? "Weryfikacja…" : "Zaloguj"}
         </button>
       </form>
     </Frame>
@@ -106,7 +103,7 @@ export function SetupPage() {
           <img src={s.qr_png} alt="Kod QR TOTP" className="size-48 border-8 border-white bg-white [image-rendering:pixelated]" />
         </div>
         <Field label="Sekret (wpis ręczny)">
-          <input readOnly className="field readout text-xs text-amber" value={s.totp_secret} onFocus={(e) => e.currentTarget.select()} />
+          <input readOnly className="field readout text-xs" value={s.totp_secret} onFocus={(e) => e.currentTarget.select()} />
         </Field>
         <form
           className="space-y-4"
@@ -131,7 +128,7 @@ export function SetupPage() {
   return (
     <Frame step="SETUP / 01" title="Pierwsze uruchomienie">
       <p className="text-sm text-ink-2">
-        Token instalacyjny znajdziesz w logach huba: <code className="readout text-amber">docker logs nexos-hub</code> (pole{" "}
+        Token instalacyjny znajdziesz w logach huba: <code className="readout text-ink">docker logs nexos-hub</code> (pole{" "}
         <code className="readout">setup_token</code>).
       </p>
       <form
@@ -196,7 +193,7 @@ export function InvitePage({ token, onDone }: { token: string; onDone: () => voi
           <img src={s.qr_png} alt="Kod QR TOTP" className="size-48 border-8 border-white bg-white [image-rendering:pixelated]" />
         </div>
         <Field label="Sekret (wpis ręczny)">
-          <input readOnly className="field readout text-xs text-amber" value={s.totp_secret} onFocus={(e) => e.currentTarget.select()} />
+          <input readOnly className="field readout text-xs" value={s.totp_secret} onFocus={(e) => e.currentTarget.select()} />
         </Field>
         <form
           className="space-y-4"

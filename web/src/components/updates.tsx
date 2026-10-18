@@ -41,8 +41,8 @@ export function CheckUpdatesButton({ hostId, checkedAt, canOperate }: { hostId: 
     <span className="inline-flex flex-wrap items-center gap-3">
       <span className="readout text-xs text-ink-3">{checkedAt ? `aktualizacje sprawdzone ${ago(checkedAt)}` : "aktualizacje nie były sprawdzane"}</span>
       {canOperate && (
-        <button className="btn !px-2.5 !py-1 !text-[10px]" disabled={check.isPending} onClick={() => check.mutate()}>
-          {check.isPending ? "sprawdzanie…" : "sprawdź teraz"}
+        <button className="btn btn-sm" disabled={check.isPending} onClick={() => check.mutate()}>
+          {check.isPending ? "Sprawdzanie…" : "Sprawdź teraz"}
         </button>
       )}
       <ErrorText error={check.error} />

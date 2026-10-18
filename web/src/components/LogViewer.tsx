@@ -66,7 +66,7 @@ export function LogViewer({ hostId, containerId, name }: { hostId: string; conta
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-rule px-3 py-2">
         <span className="inline-flex items-center gap-2">
           <span
-            className={`inline-block size-2 rounded-full ${state === "open" ? "lamp-on bg-signal text-signal" : state === "connecting" ? "bg-warn" : "bg-ink-3"}`}
+            className={`inline-block size-2 rounded-full ${state === "open" ? "bg-signal text-signal" : state === "connecting" ? "bg-warn" : "bg-ink-3"}`}
           />
           <span className="label">{state === "open" ? "na żywo" : state === "connecting" ? "łączenie" : "rozłączono"}</span>
         </span>
@@ -88,21 +88,21 @@ export function LogViewer({ hostId, containerId, name }: { hostId: string; conta
           ] as [string, boolean, (v: boolean) => void][]
         ).map(([l, v, set]) => (
           <label key={l} className="label flex cursor-pointer items-center gap-1.5">
-            <input type="checkbox" className="accent-amber" checked={v} onChange={(e) => set(e.target.checked)} />
+            <input type="checkbox" className="accent-accent" checked={v} onChange={(e) => set(e.target.checked)} />
             {l}
           </label>
         ))}
         <input className="field !w-56 !py-1 text-xs" placeholder="filtruj…" value={filter} onChange={(e) => setFilter(e.target.value)} />
         <div className="ml-auto flex gap-1.5">
-          <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setLines([])}>
-            wyczyść
+          <button className="btn btn-sm" onClick={() => setLines([])}>
+            Wyczyść
           </button>
-          <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={download} disabled={!lines.length}>
-            pobierz
+          <button className="btn btn-sm" onClick={download} disabled={!lines.length}>
+            Pobierz
           </button>
           {state !== "open" && state !== "connecting" && (
-            <button className="btn !px-2 !py-0.5 !text-[10px]" onClick={() => setSession((s) => s + 1)}>
-              połącz
+            <button className="btn btn-sm" onClick={() => setSession((s) => s + 1)}>
+              Połącz
             </button>
           )}
         </div>
@@ -116,7 +116,7 @@ export function LogViewer({ hostId, containerId, name }: { hostId: string; conta
           const text = l.text ?? "";
           const sp = timestamps ? text.indexOf(" ") : -1;
           return (
-            <div key={i} className={l.stream === "stderr" ? "text-[#ff9a8f]" : "text-ink"}>
+            <div key={i} className={l.stream === "stderr" ? "text-alarm" : "text-ink"}>
               {sp > 0 && <span className="mr-2 text-ink-3 select-none">{text.slice(11, Math.min(sp, 23))}</span>}
               {sp > 0 ? text.slice(sp + 1) : text}
             </div>
@@ -131,7 +131,7 @@ export function LogViewer({ hostId, containerId, name }: { hostId: string; conta
           {filter && ` / ${lines.length}`} linii
         </span>
         <span>
-          <span className="text-[#ff9a8f]">■</span> stderr
+          <span className="text-alarm">■</span> stderr
         </span>
       </div>
     </div>
