@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// CertificateService lets the hub rotate an agent's mTLS certificate over an
+// already authenticated channel. The private key never leaves the agent.
+service CertificateService {
+  // CreateCSR makes the agent generate a fresh key pair (kept pending in
+  // memory) and return a certificate signing request for it.
+  rpc CreateCSR(CreateCSRRequest) returns (CreateCSRResponse);
+  // InstallCertificate installs a certificate signed by the hub CA for the
+  // pending key. The agent validates it before swapping it in.
+  rpc InstallCertificate(InstallCertificateRequest) returns (InstallCertificateResponse);
+}
+
+message CreateCSRRequest {}
+
+message CreateCSRResponse {
+  bytes csr_pem = 1;
+}
+
+message InstallCertificateRequest {
+  bytes certificate_pem = 1;
+}
+
+message InstallCertificateResponse {
+  int64 not_after_unix = 1;
+}

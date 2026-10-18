@@ -1,0 +1,10 @@
+#!/usr/sbin/nft -f
+# Server B: the agent port is reachable only from the hub over WireGuard.
+# Separate table, so the existing host firewall (and Docker's) is untouched.
+table inet nexos {
+    chain input {
+        type filter hook input priority -10; policy accept;
+        tcp dport 7443 iifname "wg0" ip saddr 10.66.0.1 accept
+        tcp dport 7443 drop
+    }
+}

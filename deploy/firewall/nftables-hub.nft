@@ -1,0 +1,24 @@
+#!/usr/sbin/nft -f
+# Server A: hub + local agent.
+# Adjust LAN to your home network.
+define LAN = 192.168.1.0/24
+
+table inet nexos {
+    chain input {
+        type filter hook input priority -10; policy accept;
+
+        # Local agent: only the hub (same host, connecting from the wg address).
+        tcp dport 7443 iifname "lo" ip saddr 10.66.0.1 accept
+        tcp dport 7443 drop
+
+        # Enrollment endpoint: WireGuard peers only.
+        tcp dport 7444 iifname "wg0" accept
+        tcp dport 7444 drop
+
+        # Web UI: LAN and WireGuard clients only.
+        tcp dport 8443 ip saddr $LAN accept
+        tcp dport 8443 iifname "wg0" accept
+        tcp dport 8443 iifname "lo" accept
+        tcp dport 8443 drop
+    }
+}

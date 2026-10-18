@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// SystemService exposes host information and live host metrics.
+service SystemService {
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream StreamMetricsResponse);
+}
+
+message GetInfoRequest {}
+
+message GetInfoResponse {
+  HostInfo info = 1;
+}
+
+message HostInfo {
+  string hostname = 1;
+  string os = 2;
+  string platform = 3;
+  string platform_version = 4;
+  string kernel_version = 5;
+  string arch = 6;
+  uint64 uptime_seconds = 7;
+  uint64 boot_time_unix = 8;
+  string cpu_model = 9;
+  uint32 cpu_cores_physical = 10;
+  uint32 cpu_cores_logical = 11;
+  uint64 memory_total_bytes = 12;
+  string agent_version = 13;
+  DockerInfo docker = 14;
+}
+
+message DockerInfo {
+  bool available = 1;
+  string error = 2;
+  string server_version = 3;
+  string api_version = 4;
+  uint32 containers_total = 5;
+  uint32 containers_running = 6;
+  uint32 containers_paused = 7;
+  uint32 containers_stopped = 8;
+  uint32 images = 9;
+  string storage_driver = 10;
+}
+
+message StreamMetricsRequest {
+  // Sampling interval in seconds. Clamped by the agent to [1, 60].
+  uint32 interval_seconds = 1;
+}
+
+message StreamMetricsResponse {
+  HostMetrics metrics = 1;
+}
+
+message HostMetrics {
+  int64 timestamp_unix_ms = 1;
+  double cpu_percent = 2;
+  repeated double cpu_per_core_percent = 3;
+  double load1 = 4;
+  double load5 = 5;
+  double load15 = 6;
+  uint64 memory_total_bytes = 7;
+  uint64 memory_used_bytes = 8;
+  uint64 memory_available_bytes = 9;
+  uint64 swap_total_bytes = 10;
+  uint64 swap_used_bytes = 11;
+  repeated DiskUsage disks = 12;
+  repeated NetworkInterfaceStats network = 13;
+  repeated Temperature temperatures = 14;
+  uint64 uptime_seconds = 15;
+  // Aggregated across non-virtual interfaces.
+  double network_rx_bytes_per_second = 16;
+  double network_tx_bytes_per_second = 17;
+  double disk_read_bytes_per_second = 18;
+  double disk_write_bytes_per_second = 19;
+}
+
+message DiskUsage {
+  string mountpoint = 1;
+  string device = 2;
+  string fstype = 3;
+  uint64 total_bytes = 4;
+  uint64 used_bytes = 5;
+  uint64 free_bytes = 6;
+  double used_percent = 7;
+}
+
+message NetworkInterfaceStats {
+  string name = 1;
+  uint64 rx_bytes_total = 2;
+  uint64 tx_bytes_total = 3;
+  double rx_bytes_per_second = 4;
+  double tx_bytes_per_second = 5;
+  uint64 rx_errors = 6;
+  uint64 tx_errors = 7;
+  bool virtual = 8;
+}
+
+message Temperature {
+  string sensor = 1;
+  double celsius = 2;
+}

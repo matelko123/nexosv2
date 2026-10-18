@@ -1,0 +1,41 @@
+# NexOS agent – runs on every managed server (A and B).
+#
+# Put NEXOS_LISTEN and the one-time NEXOS_ENROLL bundle (shown by the hub)
+# into a .env file next to this file. Remove NEXOS_ENROLL after enrollment.
+services:
+  nexos-agent:
+    image: nexos-agent:latest
+    build:
+      context: ../..
+      dockerfile: Dockerfile.agent
+    container_name: nexos-agent
+    # Protects the container from stop/remove via the NexOS UI.
+    labels: { nexos.role: agent }
+    restart: unless-stopped
+    # Host networking: listen on the WireGuard IP and see host interfaces.
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      NEXOS_LISTEN: ${NEXOS_LISTEN:?set NEXOS_LISTEN, e.g. 10.66.0.2:7443}
+      NEXOS_ENROLL: ${NEXOS_ENROLL:-}
+      NEXOS_HOSTNAME: ${NEXOS_HOSTNAME:-}
+      HOST_PROC: /host/proc
+      HOST_SYS: /host/sys
+      HOST_ETC: /host/root/etc
+      NEXOS_HOST_ROOT: /host/root
+    volumes:
+      - nexos-agent-data:/data
+      # Full Docker control: the agent is root-equivalent on this host, which
+      # is why it is reachable only through WireGuard + mTLS from the hub.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+      - /opt/nexos/stacks:/opt/nexos/stacks
+    tmpfs:
+      - /tmp
+
+volumes:
+  nexos-agent-data:

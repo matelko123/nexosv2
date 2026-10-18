@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+FROM node:24-alpine AS web
+WORKDIR /src/web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
+FROM golang:1.27-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+COPY --from=web /src/web/dist ./web/dist
+ARG VERSION=dev
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/nexos-hub ./hub/cmd/nexos-hub && mkdir -p /out/data
+
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /out/nexos-hub /nexos-hub
+# Named volumes inherit this ownership on first use.
+COPY --from=build --chown=65532:65532 /out/data /data
+USER nonroot:nonroot
+ENV NEXOS_DATA_DIR=/data
+VOLUME ["/data"]
+ENTRYPOINT ["/nexos-hub"]

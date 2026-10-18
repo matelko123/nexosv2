@@ -1,0 +1,14 @@
+# Server B (agent only). B dials A, so B needs no open ports at all.
+[Interface]
+Address = 10.66.0.2/24
+PrivateKey = <B_PRIVATE_KEY>
+
+[Peer]
+PublicKey = <A_PUBLIC_KEY>
+PresharedKey = <AB_PSK>
+# Your public IP or a dynamic DNS name of location A.
+Endpoint = <A_PUBLIC_HOST>:51821
+# Only the hub may be reached through the tunnel.
+AllowedIPs = 10.66.0.1/32
+# Keeps NAT mappings open so A can reach B's agent at any time.
+PersistentKeepalive = 25

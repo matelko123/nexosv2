@@ -1,0 +1,4 @@
+# Deployed to Linux: keep LF everywhere.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary

@@ -1,0 +1,198 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// ContainerService manages Docker containers on the agent's host.
+service ContainerService {
+  rpc ListContainers(ListContainersRequest) returns (ListContainersResponse);
+  // InspectContainer returns the raw Docker inspect document (JSON).
+  rpc InspectContainer(InspectContainerRequest) returns (InspectContainerResponse);
+  rpc ContainerAction(ContainerActionRequest) returns (ContainerActionResponse);
+  rpc RemoveContainer(RemoveContainerRequest) returns (RemoveContainerResponse);
+  rpc StreamLogs(StreamLogsRequest) returns (stream StreamLogsResponse);
+  // StreamStats streams resource usage of the given containers (all running
+  // containers when container_ids is empty) at a fixed interval.
+  rpc StreamStats(StreamStatsRequest) returns (stream StreamStatsResponse);
+  // Exec runs an interactive process in a container. The first client message
+  // must be `start`; afterwards the client sends `stdin` and `resize`.
+  rpc Exec(stream ExecRequest) returns (stream ExecResponse);
+}
+
+// EventService streams Docker engine events (container/image/network/volume).
+service EventService {
+  rpc StreamEvents(StreamEventsRequest) returns (stream StreamEventsResponse);
+}
+
+message Container {
+  string id = 1;
+  string name = 2;
+  string image = 3;
+  string image_id = 4;
+  string command = 5;
+  int64 created_unix = 6;
+  // created, running, paused, restarting, removing, exited, dead
+  string state = 7;
+  // Human readable status, e.g. "Up 3 hours (healthy)".
+  string status = 8;
+  // none, starting, healthy, unhealthy (empty when no healthcheck).
+  string health = 9;
+  repeated Port ports = 10;
+  map<string, string> labels = 11;
+  repeated string networks = 12;
+  repeated Mount mounts = 13;
+  // Compose project/service from labels, for grouping.
+  string compose_project = 14;
+  string compose_service = 15;
+  // Set for NexOS's own containers; destructive actions are refused.
+  bool protected = 16;
+}
+
+message Port {
+  string ip = 1;
+  uint32 private_port = 2;
+  uint32 public_port = 3;
+  string type = 4;
+}
+
+message Mount {
+  string type = 1;
+  string source = 2;
+  string destination = 3;
+  bool read_only = 4;
+  string name = 5;
+}
+
+message ListContainersRequest {
+  bool all = 1;
+}
+
+message ListContainersResponse {
+  repeated Container containers = 1;
+}
+
+message InspectContainerRequest {
+  string id = 1;
+}
+
+message InspectContainerResponse {
+  bytes json = 1;
+}
+
+enum ContainerActionType {
+  CONTAINER_ACTION_TYPE_UNSPECIFIED = 0;
+  CONTAINER_ACTION_TYPE_START = 1;
+  CONTAINER_ACTION_TYPE_STOP = 2;
+  CONTAINER_ACTION_TYPE_RESTART = 3;
+  CONTAINER_ACTION_TYPE_KILL = 4;
+  CONTAINER_ACTION_TYPE_PAUSE = 5;
+  CONTAINER_ACTION_TYPE_UNPAUSE = 6;
+}
+
+message ContainerActionRequest {
+  string id = 1;
+  ContainerActionType action = 2;
+  // Stop/restart grace period in seconds; 0 uses the container default.
+  int32 timeout_seconds = 3;
+}
+
+message ContainerActionResponse {}
+
+message RemoveContainerRequest {
+  string id = 1;
+  bool force = 2;
+  bool remove_volumes = 3;
+}
+
+message RemoveContainerResponse {}
+
+message StreamLogsRequest {
+  string id = 1;
+  bool follow = 2;
+  // Number of lines from the end; 0 means all.
+  uint32 tail = 3;
+  int64 since_unix = 4;
+  bool timestamps = 5;
+}
+
+message LogLine {
+  // "stdout" or "stderr"
+  string stream = 1;
+  string text = 2;
+}
+
+message StreamLogsResponse {
+  repeated LogLine lines = 1;
+}
+
+message StreamStatsRequest {
+  repeated string container_ids = 1;
+  uint32 interval_seconds = 2;
+}
+
+message ContainerStats {
+  string id = 1;
+  string name = 2;
+  double cpu_percent = 3;
+  uint64 memory_usage_bytes = 4;
+  uint64 memory_limit_bytes = 5;
+  double memory_percent = 6;
+  uint64 network_rx_bytes = 7;
+  uint64 network_tx_bytes = 8;
+  double network_rx_bytes_per_second = 9;
+  double network_tx_bytes_per_second = 10;
+  uint64 block_read_bytes = 11;
+  uint64 block_write_bytes = 12;
+  uint64 pids = 13;
+}
+
+message StreamStatsResponse {
+  int64 timestamp_unix_ms = 1;
+  repeated ContainerStats stats = 2;
+}
+
+message ExecStart {
+  string container_id = 1;
+  repeated string command = 2;
+  bool tty = 3;
+  uint32 cols = 4;
+  uint32 rows = 5;
+  string user = 6;
+}
+
+message ExecResize {
+  uint32 cols = 1;
+  uint32 rows = 2;
+}
+
+message ExecRequest {
+  oneof msg {
+    ExecStart start = 1;
+    bytes stdin = 2;
+    ExecResize resize = 3;
+  }
+}
+
+message ExecResponse {
+  oneof msg {
+    bytes output = 1;
+    // Sent once when the process ends.
+    int32 exit_code = 2;
+  }
+}
+
+message StreamEventsRequest {}
+
+message DockerEvent {
+  // container, image, network, volume, ...
+  string type = 1;
+  string action = 2;
+  string actor_id = 3;
+  map<string, string> attributes = 4;
+  int64 time_unix_nano = 5;
+}
+
+message StreamEventsResponse {
+  DockerEvent event = 1;
+}

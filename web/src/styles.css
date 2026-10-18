@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@import "@fontsource/chakra-petch/500.css";
+@import "@fontsource/chakra-petch/600.css";
+@import "@fontsource/ibm-plex-sans-condensed/400.css";
+@import "@fontsource/ibm-plex-sans-condensed/500.css";
+@import "@fontsource/ibm-plex-sans-condensed/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "uplot/dist/uPlot.min.css";
+
+/* Instrument-panel palette: graphite chassis, amber phosphor, signal lamps. */
+@theme {
+  --font-display: "Chakra Petch", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans Condensed", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-chassis: #0b0c0d;
+  --color-panel: #121416;
+  --color-panel-2: #181b1e;
+  --color-rule: #262a2e;
+  --color-rule-2: #343a40;
+  --color-ink: #e6e1d6;
+  --color-ink-2: #a49e92;
+  --color-ink-3: #6b675f;
+  --color-amber: #ffb000;
+  --color-amber-dim: #8a5f00;
+  --color-signal: #4ade80;
+  --color-cyan: #5ccfe6;
+  --color-alarm: #ff5a4e;
+  --color-warn: #ffd166;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    background-color: var(--color-chassis);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* Faint measurement grid, like graticule on a scope screen. */
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px),
+      radial-gradient(1200px 600px at 85% -10%, rgb(255 176 0 / 0.06), transparent 60%);
+    background-size: 24px 24px, 24px 24px, auto;
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: var(--color-amber);
+    color: var(--color-chassis);
+  }
+  :focus-visible {
+    outline: 1px solid var(--color-amber);
+    outline-offset: 2px;
+  }
+  input,
+  textarea {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .panel {
+    position: relative;
+    background: linear-gradient(180deg, var(--color-panel-2), var(--color-panel));
+    border: 1px solid var(--color-rule);
+  }
+  /* Corner ticks on panels. */
+  .panel::before,
+  .panel::after {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: var(--color-rule-2);
+    pointer-events: none;
+  }
+  .panel::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  .panel::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+  .label {
+    font-family: var(--font-display);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+  .readout {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .field {
+    width: 100%;
+    background: var(--color-chassis);
+    border: 1px solid var(--color-rule-2);
+    padding: 0.6rem 0.75rem;
+    color: var(--color-ink);
+    transition: border-color 120ms;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-amber);
+    box-shadow: 0 0 0 3px rgb(255 176 0 / 0.12);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-rule-2);
+    color: var(--color-ink);
+    background: var(--color-panel-2);
+    transition: all 120ms;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--color-ink-3);
+    background: var(--color-rule);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-amber);
+    border-color: var(--color-amber);
+    color: var(--color-chassis);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #ffc233;
+    border-color: #ffc233;
+  }
+  .btn-danger {
+    border-color: rgb(255 90 78 / 0.5);
+    color: var(--color-alarm);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: rgb(255 90 78 / 0.12);
+    border-color: var(--color-alarm);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lamp {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    box-shadow: 0 0 10px 1px currentColor;
+  }
+}
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.rise {
+  animation: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.lamp-on {
+  animation: lamp 2.4s ease-in-out infinite;
+}
+
+/* uPlot styling to match the panel. */
+.uplot {
+  font-family: var(--font-mono);
+  color: var(--color-ink-3);
+}
+.u-legend {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .lamp-on {
+    animation: none;
+  }
+}

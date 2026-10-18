@@ -1,0 +1,20 @@
+# Server A (hub + agent). Forward UDP 51821 on the router to this machine.
+# Port 51821: 51820 is commonly taken by wg-easy or another WireGuard setup.
+# Generate keys:  wg genkey | tee a.key | wg pubkey > a.pub
+#                 wg genpsk > ab.psk
+[Interface]
+Address = 10.66.0.1/24
+ListenPort = 51821
+PrivateKey = <A_PRIVATE_KEY>
+
+# Server B (agent)
+[Peer]
+PublicKey = <B_PUBLIC_KEY>
+PresharedKey = <AB_PSK>
+AllowedIPs = 10.66.0.2/32
+
+# Optional: your laptop/phone for remote access to the UI
+#[Peer]
+#PublicKey = <LAPTOP_PUBLIC_KEY>
+#PresharedKey = <A_LAPTOP_PSK>
+#AllowedIPs = 10.66.0.10/32

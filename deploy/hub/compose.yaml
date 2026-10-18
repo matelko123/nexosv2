@@ -1,0 +1,32 @@
+# NexOS hub – runs on server A (the one with the WireGuard listen port).
+# Host networking: the hub must reach agents over wg0 and bind the enrollment
+# endpoint to the WireGuard address. The container itself is unprivileged.
+services:
+  nexos-hub:
+    image: nexos-hub:latest
+    build:
+      context: ../..
+      dockerfile: Dockerfile.hub
+    container_name: nexos-hub
+    # Protects the container from stop/remove via the NexOS UI.
+    labels: { nexos.role: hub }
+    restart: unless-stopped
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    user: "65532:65532"
+    environment:
+      # Browser UI. Bind to a LAN/WireGuard address, never a public one.
+      NEXOS_UI_LISTEN: ${NEXOS_UI_LISTEN:-0.0.0.0:8443}
+      # Extra names/IPs for the UI TLS certificate (comma separated).
+      NEXOS_UI_HOSTS: ${NEXOS_UI_HOSTS:-}
+      # Agent enrollment endpoint: WireGuard address only.
+      NEXOS_ENROLL_LISTEN: ${NEXOS_ENROLL_LISTEN:-10.66.0.1:7444}
+      NEXOS_METRICS_INTERVAL: ${NEXOS_METRICS_INTERVAL:-5s}
+      NEXOS_METRICS_RETENTION: ${NEXOS_METRICS_RETENTION:-24h}
+    volumes:
+      - nexos-hub-data:/data
+
+volumes:
+  nexos-hub-data:
