@@ -63,7 +63,8 @@ func New(cfg Config, bus *events.Bus) *Checker {
 	return &Checker{cfg: cfg, bus: bus, http: &http.Client{Timeout: 20 * time.Second}}
 }
 
-// Run checks shortly after start and then every interval (0 disables).
+// Run checks a few seconds after start (so a restarted hub shows fresh
+// status right away) and then every interval (0 disables).
 func (c *Checker) Run(ctx context.Context) {
 	if c.cfg.Interval <= 0 || c.cfg.Repo == "" {
 		return
@@ -71,7 +72,7 @@ func (c *Checker) Run(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
-	case <-time.After(time.Minute):
+	case <-time.After(10 * time.Second):
 	}
 	for {
 		if err := c.Check(ctx); err != nil {
