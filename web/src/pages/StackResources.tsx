@@ -77,14 +77,22 @@ export function StackResources({ hostId, members, updates }: { hostId: string; m
   // Containers on the host network share the host's interfaces; Docker reports no traffic for them.
   const hostNet = members.filter((c) => c.networks?.includes("host"));
   const measured = du.data && !(du.data.computing && !du.data.computed_unix);
+  // An older hub or agent has no disk usage / summed history endpoints.
+  const duMissing = du.isError && !du.data;
 
   return (
     <section className="rise space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
           label="Na dysku"
-          value={measured ? bytes(storage.total) : <span className="text-ink-3">liczenie…</span>}
-          sub={measured ? `wolumeny ${bytes(storage.volumes)} · katalogi ${bytes(storage.binds)} · warstwy ${bytes(storage.writable)}` : "pierwszy pomiar może potrwać"}
+          value={measured ? bytes(storage.total) : <span className="text-ink-3">{duMissing ? "niedostępne" : "liczenie…"}</span>}
+          sub={
+            measured
+              ? `wolumeny ${bytes(storage.volumes)} · katalogi ${bytes(storage.binds)} · warstwy ${bytes(storage.writable)}`
+              : duMissing
+                ? "wymaga aktualizacji huba i agenta"
+                : "pierwszy pomiar może potrwać"
+          }
         />
         <Tile
           label="Sieć teraz"
@@ -109,10 +117,10 @@ export function StackResources({ hostId, members, updates }: { hostId: string; m
                 <span className="text-violet">↑ {bytes(hist.data.tx_bytes)}</span>
               </>
             ) : (
-              <span className="text-ink-3">…</span>
+              <span className="text-ink-3">{hist.isError ? "niedostępne" : "…"}</span>
             )
           }
-          sub="z minutowych średnich zapisanych przez hub"
+          sub={hist.isError ? "wymaga aktualizacji huba" : "z minutowych średnich zapisanych przez hub"}
         />
         <Tile
           label="Procesor i pamięć"
@@ -137,7 +145,9 @@ export function StackResources({ hostId, members, updates }: { hostId: string; m
               ))}
             </div>
           </PanelHeader>
-          {hist.data && hist.data.points.length === 0 ? (
+          {hist.isError ? (
+            <div className="p-6 text-sm text-ink-3">Historia stacka jest niedostępna — hub nie obsługuje jeszcze tego widoku. Zaktualizuj hub.</div>
+          ) : hist.data && hist.data.points.length === 0 ? (
             <div className="p-6 text-sm text-ink-3">Brak zapisanej historii — punkty pojawiają się co minutę, gdy usługi działają.</div>
           ) : (
             <div className="space-y-4 p-3">
@@ -164,7 +174,7 @@ export function StackResources({ hostId, members, updates }: { hostId: string; m
             <StorageStatus du={du} />
           </PanelHeader>
           {du.data?.error && <p className="px-4 pt-3 text-xs text-warn">Docker nie podał rozmiarów wolumenów: {du.data.error}</p>}
-          <StorageList storage={storage} />
+          <StorageList storage={storage} unavailable={duMissing} />
         </div>
       </div>
 
@@ -223,7 +233,7 @@ export function StackResources({ hostId, members, updates }: { hostId: string; m
                         "—"
                       )}
                     </td>
-                    <td className="readout px-4 py-2.5 text-xs">{measured ? bytes(own.total) : "…"}</td>
+                    <td className="readout px-4 py-2.5 text-xs">{measured ? bytes(own.total) : duMissing ? "—" : "…"}</td>
                   </tr>
                 );
               })}

@@ -130,7 +130,7 @@ export function StorageStatus({ du }: { du: ReturnType<typeof useDiskUsage> }) {
 }
 
 /** Storage entries as a list with each entry's share of the largest one. */
-export function StorageList({ storage, showUsers = true }: { storage: Storage; showUsers?: boolean }) {
+export function StorageList({ storage, showUsers = true, unavailable = false }: { storage: Storage; showUsers?: boolean; unavailable?: boolean }) {
   const max = Math.max(...storage.entries.map((e) => e.size ?? 0), storage.writable, 1);
   if (!storage.entries.length && !storage.writable) {
     return <div className="px-4 py-4 text-sm text-ink-3">Brak wolumenów i montowań — dane żyją tylko w warstwie kontenera.</div>;
@@ -148,7 +148,7 @@ export function StorageList({ storage, showUsers = true }: { storage: Storage; s
                 {e.label}
               </span>
             </div>
-            <span className={`readout shrink-0 text-[13px] ${e.error ? "text-ink-3" : "font-medium"}`}>{e.error ? "—" : sizeText(e)}</span>
+            <span className={`readout shrink-0 text-[13px] ${e.error ? "text-ink-3" : "font-medium"}`}>{e.error || unavailable ? "—" : sizeText(e)}</span>
           </div>
           {!e.error && (e.size ?? 0) > 0 && (
             <div className="meter mt-1.5 !h-1">

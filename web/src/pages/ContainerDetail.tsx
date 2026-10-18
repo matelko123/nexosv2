@@ -173,7 +173,7 @@ function ContainerStorage({ hostId, c }: { hostId: string; c: Container }) {
           <Stat label="warstwa kontenera" value={bytes(storage.writable)} sub={image ? `obraz ${bytes(image)} (współdzielony)` : undefined} />
         </div>
       ) : null}
-      <StorageList storage={{ ...storage, writable: 0 }} showUsers />
+      <StorageList storage={{ ...storage, writable: 0 }} showUsers unavailable={du.isError && !du.data} />
     </div>
   );
 }
