@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { api, wsUrl } from "../lib/api";
+import { api, observability, wsUrl } from "../lib/api";
 import { useJsonSocket } from "../lib/ws";
 import { bytes, dateTime, pct, rate } from "../lib/format";
 import type { ContainerStats, Me, StatsMessage } from "../lib/types";
@@ -81,7 +81,12 @@ export function ContainerDetailPage({ me }: { me: Me }) {
 
       <div className="rise">
         {tab === "logs" && <LogViewer hostId={id} containerId={c.id} name={c.name} />}
-        {tab === "stats" && <StatsView hostId={id} containerId={c.id} running={c.state === "running"} />}
+        {tab === "stats" && (
+          <div className="space-y-6">
+            <StatsView hostId={id} containerId={c.id} running={c.state === "running"} />
+            <ContainerHistory hostId={id} name={c.name} />
+          </div>
+        )}
         {tab === "console" && <ContainerTerminal hostId={id} containerId={c.id} name={c.name} running={c.state === "running"} />}
         {tab === "details" && <Details hostId={id} containerId={c.id} ports={portsText(c)} />}
       </div>
@@ -144,6 +149,61 @@ function StatsView({ hostId, containerId, running }: { hostId: string; container
       </div>
       <p className="label">próbkowanie co 2 s · okno {WINDOW} próbek</p>
     </div>
+  );
+}
+
+const HISTORY_RANGES = ["1h", "6h", "24h", "7d"] as const;
+
+/** Stored per-minute history; keyed by name so it survives re-creation. */
+function ContainerHistory({ hostId, name }: { hostId: string; name: string }) {
+  const [range, setRange] = useState<(typeof HISTORY_RANGES)[number]>("6h");
+  const q = useQuery({ queryKey: ["container-history", hostId, name, range], queryFn: () => observability.containerHistory(hostId, name, range), refetchInterval: 60_000 });
+  const charts = useMemo(() => {
+    const pts = q.data ?? [];
+    return {
+      x: pts.map((p) => p.ts / 1000),
+      cpu: [{ label: "cpu %", color: "#ffb000", values: pts.map((p) => p.cpu) }],
+      mem: [{ label: "pamięć", color: "#5ccfe6", values: pts.map((p) => p.mem) }],
+      net: [
+        { label: "rx ↓", color: "#5ccfe6", values: pts.map((p) => p.net_rx) },
+        { label: "tx ↑", color: "#ffb000", values: pts.map((p) => p.net_tx) },
+      ],
+    };
+  }, [q.data]);
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="label !text-ink-2">historia (średnie minutowe)</h2>
+        <div className="flex border border-rule">
+          {HISTORY_RANGES.map((r) => (
+            <button key={r} onClick={() => setRange(r)} className={`readout px-3 py-1 text-xs ${r === range ? "bg-amber text-chassis" : "text-ink-2 hover:text-ink"}`}>
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+      <ErrorText error={q.error} />
+      {q.data && q.data.length === 0 ? (
+        <div className="panel p-6 text-sm text-ink-3">Brak zapisanej historii — punkty pojawiają się co minutę, gdy kontener działa.</div>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-3">
+          {(
+            [
+              ["CPU", charts.cpu, (v: number) => `${v.toFixed(v > 0 && v < 10 ? 1 : 0)}%`],
+              ["Pamięć", charts.mem, (v: number) => bytes(v, 0)],
+              ["Sieć", charts.net, (v: number) => rate(v)],
+            ] as const
+          ).map(([title, series, fmt]) => (
+            <div key={title} className="panel">
+              <PanelHeader title={title} />
+              <div className="p-3">
+                <Chart x={charts.x} series={[...series]} format={fmt} height={160} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

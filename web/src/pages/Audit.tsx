@@ -19,7 +19,7 @@ export function AuditPage() {
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label">02 / bezpieczeństwo</div>
+          <div className="label">03 / bezpieczeństwo</div>
           <h1 className="font-display text-2xl font-semibold tracking-wider">Dziennik audytu</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">

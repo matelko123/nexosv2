@@ -8,6 +8,7 @@ import { Confirm, ErrorText, PanelHeader } from "../components/ui";
 import { CodeEditor } from "../components/CodeEditor";
 import { OutputConsole } from "../components/OutputConsole";
 import { StateBadge } from "../components/containers";
+import { UpdateBadge, useHostUpdates } from "../components/updates";
 import { HostPage } from "./HostPage";
 import { StackStatus } from "./Stacks";
 
@@ -26,6 +27,8 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
   const containers = useQuery({ queryKey: ["containers", hostId], queryFn: () => api.containers(hostId) });
   const stack = list.data?.find((s) => s.name === name) ?? detail.data?.stack;
   const members = (containers.data ?? []).filter((c) => c.compose_project === name);
+  const upd = useHostUpdates(hostId);
+  const outdated = members.filter((c) => upd.byContainer.get(c.name)?.update_available).length;
 
   const [compose, setCompose] = useState("");
   const [env, setEnv] = useState("");
@@ -141,6 +144,17 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
 
       {run && <OutputConsole run={run} onClose={clear} />}
 
+      {outdated > 0 && canOperate && !locked && managed && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-l-2 border-cyan bg-cyan/5 px-4 py-2.5 text-sm">
+          <span>
+            <span className="text-cyan">{outdated}</span> {outdated === 1 ? "kontener ma" : "kontenery mają"} nowszy obraz w rejestrze.
+          </span>
+          <button className="btn !px-2.5 !py-1 !text-[10px]" disabled={busy} onClick={() => op("up", { pull: true })}>
+            pobierz i wdróż
+          </button>
+        </div>
+      )}
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="panel flex min-h-[520px] flex-col">
           {managed ? (
@@ -226,7 +240,10 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
                 className="group flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-panel-2"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-sm group-hover:text-amber">{c.compose_service || c.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm group-hover:text-amber">{c.compose_service || c.name}</span>
+                    <UpdateBadge u={upd.byContainer.get(c.name)} />
+                  </div>
                   <div className="readout truncate text-[11px] text-ink-3">{c.image}</div>
                 </div>
                 <StateBadge c={c} />

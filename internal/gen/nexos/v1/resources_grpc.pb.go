@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ImageService_ListImages_FullMethodName   = "/nexos.v1.ImageService/ListImages"
-	ImageService_InspectImage_FullMethodName = "/nexos.v1.ImageService/InspectImage"
-	ImageService_PullImage_FullMethodName    = "/nexos.v1.ImageService/PullImage"
-	ImageService_RemoveImage_FullMethodName  = "/nexos.v1.ImageService/RemoveImage"
-	ImageService_PruneImages_FullMethodName  = "/nexos.v1.ImageService/PruneImages"
+	ImageService_ListImages_FullMethodName        = "/nexos.v1.ImageService/ListImages"
+	ImageService_InspectImage_FullMethodName      = "/nexos.v1.ImageService/InspectImage"
+	ImageService_PullImage_FullMethodName         = "/nexos.v1.ImageService/PullImage"
+	ImageService_RemoveImage_FullMethodName       = "/nexos.v1.ImageService/RemoveImage"
+	ImageService_PruneImages_FullMethodName       = "/nexos.v1.ImageService/PruneImages"
+	ImageService_CheckImageUpdates_FullMethodName = "/nexos.v1.ImageService/CheckImageUpdates"
 )
 
 // ImageServiceClient is the client API for ImageService service.
@@ -36,6 +37,9 @@ type ImageServiceClient interface {
 	PullImage(ctx context.Context, in *PullImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[PullImageResponse], error)
 	RemoveImage(ctx context.Context, in *RemoveImageRequest, opts ...grpc.CallOption) (*RemoveImageResponse, error)
 	PruneImages(ctx context.Context, in *PruneImagesRequest, opts ...grpc.CallOption) (*PruneImagesResponse, error)
+	// CheckImageUpdates compares local images with the registry. With no
+	// references, all tags used by containers on the host are checked.
+	CheckImageUpdates(ctx context.Context, in *CheckImageUpdatesRequest, opts ...grpc.CallOption) (*CheckImageUpdatesResponse, error)
 }
 
 type imageServiceClient struct {
@@ -105,6 +109,16 @@ func (c *imageServiceClient) PruneImages(ctx context.Context, in *PruneImagesReq
 	return out, nil
 }
 
+func (c *imageServiceClient) CheckImageUpdates(ctx context.Context, in *CheckImageUpdatesRequest, opts ...grpc.CallOption) (*CheckImageUpdatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckImageUpdatesResponse)
+	err := c.cc.Invoke(ctx, ImageService_CheckImageUpdates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ImageServiceServer is the server API for ImageService service.
 // All implementations must embed UnimplementedImageServiceServer
 // for forward compatibility.
@@ -115,6 +129,9 @@ type ImageServiceServer interface {
 	PullImage(*PullImageRequest, grpc.ServerStreamingServer[PullImageResponse]) error
 	RemoveImage(context.Context, *RemoveImageRequest) (*RemoveImageResponse, error)
 	PruneImages(context.Context, *PruneImagesRequest) (*PruneImagesResponse, error)
+	// CheckImageUpdates compares local images with the registry. With no
+	// references, all tags used by containers on the host are checked.
+	CheckImageUpdates(context.Context, *CheckImageUpdatesRequest) (*CheckImageUpdatesResponse, error)
 	mustEmbedUnimplementedImageServiceServer()
 }
 
@@ -139,6 +156,9 @@ func (UnimplementedImageServiceServer) RemoveImage(context.Context, *RemoveImage
 }
 func (UnimplementedImageServiceServer) PruneImages(context.Context, *PruneImagesRequest) (*PruneImagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PruneImages not implemented")
+}
+func (UnimplementedImageServiceServer) CheckImageUpdates(context.Context, *CheckImageUpdatesRequest) (*CheckImageUpdatesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckImageUpdates not implemented")
 }
 func (UnimplementedImageServiceServer) mustEmbedUnimplementedImageServiceServer() {}
 func (UnimplementedImageServiceServer) testEmbeddedByValue()                      {}
@@ -244,6 +264,24 @@ func _ImageService_PruneImages_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ImageService_CheckImageUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckImageUpdatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageServiceServer).CheckImageUpdates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ImageService_CheckImageUpdates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageServiceServer).CheckImageUpdates(ctx, req.(*CheckImageUpdatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ImageService_ServiceDesc is the grpc.ServiceDesc for ImageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +304,10 @@ var ImageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PruneImages",
 			Handler:    _ImageService_PruneImages_Handler,
+		},
+		{
+			MethodName: "CheckImageUpdates",
+			Handler:    _ImageService_CheckImageUpdates_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

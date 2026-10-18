@@ -240,6 +240,7 @@ func (m *Manager) session(ctx context.Context, c *conn) error {
 	go m.renewLoop(sctx, c, cc)
 	go m.infoLoop(sctx, c, sys)
 	go m.eventLoop(sctx, c, cc)
+	go m.containerStatsLoop(sctx, c, cc)
 
 	stream, err := sys.StreamMetrics(sctx, &nexosv1.StreamMetricsRequest{IntervalSeconds: m.metricInterval})
 	if err != nil {
@@ -311,6 +312,69 @@ func (m *Manager) eventLoop(ctx context.Context, c *conn, cc *grpc.ClientConn) {
 		select {
 		case <-ctx.Done():
 		case <-time.After(5 * time.Second): // e.g. Docker restarting on the host
+		}
+	}
+}
+
+// containerStatsLoop records per-container resource usage history: samples
+// every 10 s are averaged into one row per container and minute.
+func (m *Manager) containerStatsLoop(ctx context.Context, c *conn, cc *grpc.ClientConn) {
+	client := nexosv1.NewContainerServiceClient(cc)
+	type acc struct {
+		n                       int
+		cpu, mem, rx, tx, limit float64
+	}
+	for ctx.Err() == nil {
+		stream, err := client.StreamStats(ctx, &nexosv1.StreamStatsRequest{IntervalSeconds: 10})
+		if err == nil {
+			bucket := time.Now().Truncate(time.Minute)
+			sums := map[string]*acc{}
+			flush := func() {
+				pts := make([]store.ContainerPoint, 0, len(sums))
+				for name, a := range sums {
+					n := float64(a.n)
+					pts = append(pts, store.ContainerPoint{
+						Name: name, TS: bucket.UnixMilli(), CPU: a.cpu / n, Mem: uint64(a.mem / n),
+						MemLimit: uint64(a.limit), NetRx: a.rx / n, NetTx: a.tx / n,
+					})
+				}
+				if err := m.store.InsertContainerMetrics(context.WithoutCancel(ctx), c.id, pts); err != nil {
+					slog.Warn("store container metrics", "agent", c.id, "err", err)
+				}
+				sums = map[string]*acc{}
+			}
+			for {
+				resp, rerr := stream.Recv()
+				if rerr != nil {
+					break
+				}
+				now := time.UnixMilli(resp.GetTimestampUnixMs())
+				if b := now.Truncate(time.Minute); b.After(bucket) {
+					flush()
+					bucket = b
+				}
+				for _, st := range resp.GetStats() {
+					name := st.GetName()
+					if name == "" {
+						continue
+					}
+					a := sums[name]
+					if a == nil {
+						a = &acc{}
+						sums[name] = a
+					}
+					a.n++
+					a.cpu += st.GetCpuPercent()
+					a.mem += float64(st.GetMemoryUsageBytes())
+					a.limit = float64(st.GetMemoryLimitBytes())
+					a.rx += st.GetNetworkRxBytesPerSecond()
+					a.tx += st.GetNetworkTxBytesPerSecond()
+				}
+			}
+		}
+		select {
+		case <-ctx.Done():
+		case <-time.After(10 * time.Second):
 		}
 	}
 }

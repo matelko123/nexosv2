@@ -16,6 +16,7 @@ import { ContainerDetailPage } from "./pages/ContainerDetail";
 import { StacksPage } from "./pages/Stacks";
 import { StackDetailPage } from "./pages/StackDetail";
 import { ImagesPage, NetworksPage, VolumesPage } from "./pages/Resources";
+import { AlertsPage } from "./pages/Alerts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +79,7 @@ const stackRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/
 const imagesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/images", component: withMe(ImagesPage) });
 const networksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/networks", component: withMe(NetworksPage) });
 const volumesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/volumes", component: withMe(VolumesPage) });
+const alertsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/alerts", component: withMe(AlertsPage) });
 const auditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/audit", component: AuditPage });
 
 const router = createRouter({
@@ -90,6 +92,7 @@ const router = createRouter({
     imagesRoute,
     networksRoute,
     volumesRoute,
+    alertsRoute,
     auditRoute,
   ]),
   defaultNotFoundComponent: () => <Outlet />,

@@ -3,7 +3,8 @@ import { useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, resources } from "../lib/api";
 import { bytes, dateTime } from "../lib/format";
-import type { DockerImage, DockerNetwork, DockerVolume, Me, PruneResult, PullProgress } from "../lib/types";
+import type { DockerImage, DockerNetwork, DockerVolume, ImageUpdateInfo, Me, PruneResult, PullProgress } from "../lib/types";
+import { CheckUpdatesButton, UpdateBadge, useHostUpdates } from "../components/updates";
 import { Confirm, ErrorText, Field, Modal } from "../components/ui";
 import { HostPage, Th, Toolbar } from "./HostPage";
 
@@ -35,6 +36,7 @@ type LayerState = Record<string, { status: string; current?: number; total?: num
 function Images({ hostId, me }: { hostId: string; me: Me }) {
   const qc = useQueryClient();
   const images = useQuery({ queryKey: ["images", hostId], queryFn: () => resources.images(hostId) });
+  const upd = useHostUpdates(hostId);
   const [q, setQ] = useState("");
   const [ref, setRef] = useState("");
   const [pull, setPull] = useState<{ running: boolean; layers: LayerState; status: string[]; error?: string } | null>(null);
@@ -132,6 +134,7 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
       <Toolbar>
         <div className="flex flex-wrap items-center gap-4">
           <Search value={q} onChange={setQ} placeholder="szukaj tagu lub id…" />
+          <CheckUpdatesButton hostId={hostId} checkedAt={upd.checkedAt} canOperate={canOperate} />
           <span className="readout text-xs text-ink-3">
             {images.data?.length ?? 0} obrazów · {bytes(total)} · {unused} nieużywanych
           </span>
@@ -149,6 +152,20 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
       </Toolbar>
       <PruneNote r={pruneM.data} />
       <ErrorText error={images.error} />
+      {upd.available.length > 0 && (
+        <div className="panel border-l-2 !border-l-cyan p-4">
+          <div className="label mb-2 !text-cyan">dostępne aktualizacje ({upd.available.length})</div>
+          <ul className="space-y-1 text-sm">
+            {upd.available.map((u) => (
+              <li key={u.reference} className="flex flex-wrap gap-x-3">
+                <span className="readout">{u.display}</span>
+                <span className="text-ink-3">używają: {u.containers.join(", ") || "—"}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-ink-3">Aby zaktualizować, otwórz stack i wykonaj „pull”, a potem „up” — albo „up” z opcją pobrania obrazów.</p>
+        </div>
+      )}
 
       <div className="panel overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
@@ -159,6 +176,7 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
               <Th>rozmiar</Th>
               <Th>utworzony</Th>
               <Th>użycie</Th>
+              <Th>wersja</Th>
               <Th />
             </tr>
           </thead>
@@ -181,6 +199,9 @@ function Images({ hostId, me }: { hostId: string; me: Me }) {
                 <td className="readout px-4 py-2 text-xs text-ink-3">{unix(im.created_unix)}</td>
                 <td className="px-4 py-2">
                   {im.containers ? <span className="label !text-signal">{im.containers} kont.</span> : <span className="label">nieużywany</span>}
+                </td>
+                <td className="px-4 py-2">
+                  <VersionCell u={upd.byImage.get(im.id)} />
                 </td>
                 <td className="px-4 py-2 text-right">
                   {isAdmin && (
@@ -647,4 +668,17 @@ function Volumes({ hostId, me }: { hostId: string; me: Me }) {
       )}
     </div>
   );
+}
+
+function VersionCell({ u }: { u?: ImageUpdateInfo }) {
+  if (!u) return <span className="label">—</span>;
+  if (u.update_available) return <UpdateBadge u={u} />;
+  if (u.error) {
+    return (
+      <span className="label" title={u.error}>
+        {/not found in registry/.test(u.error) ? "lokalny / prywatny" : "nie sprawdzono"}
+      </span>
+    );
+  }
+  return <span className="label !text-signal">aktualny</span>;
 }

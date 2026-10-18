@@ -221,32 +221,6 @@ func (s *Server) handleRotateCert(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-var metricRanges = map[string]struct {
-	window time.Duration
-	bucket time.Duration
-}{
-	"15m": {15 * time.Minute, 0},
-	"1h":  {time.Hour, 15 * time.Second},
-	"6h":  {6 * time.Hour, time.Minute},
-	"24h": {24 * time.Hour, 5 * time.Minute},
-}
-
-func (s *Server) handleHostMetrics(w http.ResponseWriter, r *http.Request) {
-	rg, ok := metricRanges[r.URL.Query().Get("range")]
-	if !ok {
-		rg = metricRanges["1h"]
-	}
-	pts, err := s.store.Metrics(r.Context(), chi.URLParam(r, "id"), time.Now().Add(-rg.window), rg.bucket.Milliseconds())
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	if pts == nil {
-		pts = []store.MetricPoint{}
-	}
-	writeJSON(w, http.StatusOK, pts)
-}
-
 func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 || limit > 1000 {

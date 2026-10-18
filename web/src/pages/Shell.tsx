@@ -4,10 +4,12 @@ import { api } from "../lib/api";
 import { useLiveConnection } from "../lib/live";
 import type { Me } from "../lib/types";
 import { StatusLamp } from "../components/ui";
+import { isInfo, useActiveAlerts } from "./Alerts";
 
 const nav = [
   { to: "/", label: "Hosty", code: "01" },
-  { to: "/audit", label: "Audyt", code: "02", admin: true },
+  { to: "/alerts", label: "Alerty", code: "02" },
+  { to: "/audit", label: "Audyt", code: "03", admin: true },
 ] as const;
 
 export function Shell({ me }: { me: Me }) {
@@ -19,6 +21,8 @@ export function Shell({ me }: { me: Me }) {
     onSettled: () => qc.setQueryData(["me"], null),
   });
   const online = hosts.data?.filter((h) => h.status === "online").length ?? 0;
+  const alerts = useActiveAlerts();
+  const problems = alerts.data?.filter((a) => !isInfo(a)).length ?? 0;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col md:flex-row">
@@ -44,6 +48,7 @@ export function Shell({ me }: { me: Me }) {
               >
                 <span className="readout text-[10px] text-ink-3 group-data-[status=active]:text-amber">{n.code}</span>
                 <span className="font-display text-sm font-medium tracking-wider uppercase">{n.label}</span>
+                {n.to === "/alerts" && problems > 0 && <span className="readout ml-auto bg-alarm px-1.5 text-[10px] text-chassis">{problems}</span>}
               </Link>
             ))}
         </nav>

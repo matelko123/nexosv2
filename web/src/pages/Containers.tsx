@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api, wsUrl } from "../lib/api";
 import { useJsonSocket } from "../lib/ws";
 import { bytes, pct, rate } from "../lib/format";
-import type { Container, ContainerStats, Me, StatsMessage } from "../lib/types";
+import type { Container, ContainerStats, ImageUpdateInfo, Me, StatsMessage } from "../lib/types";
+import { UpdateBadge, useHostUpdates } from "../components/updates";
 import { ErrorText } from "../components/ui";
 import { ContainerActions, exitedWithError, portsText, StateBadge } from "../components/containers";
 import { HostHeader, useHost } from "./HostDetail";
@@ -29,6 +30,7 @@ export function ContainersPage({ me }: { me: Me }) {
     setStats(next);
   });
 
+  const upd = useHostUpdates(id);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const canOperate = me.user.role !== "viewer";
@@ -120,7 +122,7 @@ export function ContainersPage({ me }: { me: Me }) {
                 <table className="w-full min-w-[900px] text-sm">
                   <tbody className="divide-y divide-rule">
                     {list.map((c) => (
-                      <Row key={c.id} hostId={id} c={c} s={stats[c.id]} canOperate={canOperate} />
+                      <Row key={c.id} hostId={id} c={c} s={stats[c.id]} canOperate={canOperate} update={upd.byContainer.get(c.name)} />
                     ))}
                   </tbody>
                 </table>
@@ -135,14 +137,17 @@ export function ContainersPage({ me }: { me: Me }) {
   );
 }
 
-function Row({ hostId, c, s, canOperate }: { hostId: string; c: Container; s?: ContainerStats; canOperate: boolean }) {
+function Row({ hostId, c, s, canOperate, update }: { hostId: string; c: Container; s?: ContainerStats; canOperate: boolean; update?: ImageUpdateInfo }) {
   const ports = portsText(c);
   const running = c.state === "running";
   return (
     <tr className="group hover:bg-panel-2">
       <td className="w-[26%] px-4 py-2.5">
         <Link to="/hosts/$id/containers/$cid" params={{ id: hostId, cid: c.id }} className="block min-w-0">
-          <div className="truncate font-medium group-hover:text-amber">{c.name}</div>
+          <div className="flex items-center gap-2">
+            <span className="truncate font-medium group-hover:text-amber">{c.name}</span>
+            <UpdateBadge u={update} />
+          </div>
           <div className="readout truncate text-[11px] text-ink-3">{c.image}</div>
         </Link>
       </td>

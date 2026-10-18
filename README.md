@@ -7,7 +7,7 @@ Przeglądarka ──HTTPS──► HUB (serwer A) ──gRPC/mTLS po wg0──�
                                                         └──► AGENT B (10.66.0.2:7443)
 ```
 
-## Stan: Fazy 1–3
+## Stan: Fazy 1–4
 
 - PKI z własnym CA, rejestracja agenta jednorazowym pakietem, automatyczna rotacja certyfikatów (30 dni, odnawiane 10 dni przed końcem), pinning certyfikatów agentów w hubie
 - Logowanie: argon2id + obowiązkowe TOTP (z ochroną przed ponownym użyciem kodu), sesje HttpOnly/SameSite=Strict, CSRF, rate limiting, RBAC, dziennik audytu
@@ -18,7 +18,9 @@ Przeglądarka ──HTTPS──► HUB (serwer A) ──gRPC/mTLS po wg0──�
 - Obrazy (pull z postępem, usuwanie, prune), sieci (tworzenie, podłączanie kontenerów), wolumeny
 - Stacki compose: edytor compose.yaml i .env z walidacją, up/down/pull/restart z podglądem na żywo; pozostałe projekty compose na hoście są wykrywane automatycznie
 
-Kolejne fazy (plan): historia metryk z downsamplingiem, alerty i powiadomienia, aktualizacje obrazów, funkcje hosta.
+- Obserwowalność: historia metryk hosta do 90 dni (5 s → 1 min → 5 min), historia zasobów kontenerów, alerty (host offline, CPU, RAM, dysk, temperatura, problemy kontenerów, aktualizacje obrazów) z powiadomieniami ntfy / Discord / Telegram / webhook (HMAC) / e-mail, wykrywanie nowych wersji obrazów w rejestrze
+
+Kolejne fazy (plan): funkcje hosta (systemd, aktualizacje pakietów, procesy), WebAuthn, wielu użytkowników i RBAC per host, backup wolumenów.
 
 ## Model bezpieczeństwa
 
@@ -93,7 +95,11 @@ Po rejestracji usuń `NEXOS_ENROLL` z `.env`. Agent odmówi startu na `0.0.0.0` 
 | `NEXOS_ENROLL_LISTEN` | (wyłączone) | Adres endpointu rejestracji, np. `10.66.0.1:7444` |
 | `NEXOS_ENROLL_ADVERTISE` | = listen | Adres podawany agentom w pakiecie |
 | `NEXOS_METRICS_INTERVAL` | `5s` | Częstotliwość metryk |
-| `NEXOS_METRICS_RETENTION` | `24h` | Retencja historii |
+| `NEXOS_METRICS_RETENTION` | `24h` | Retencja surowych próbek (co 5 s) |
+| `NEXOS_RETENTION_1M` / `NEXOS_RETENTION_5M` | `168h` / `2160h` | Retencja średnich minutowych / 5-minutowych |
+| `NEXOS_RETENTION_CONTAINERS` | `168h` | Retencja historii zasobów kontenerów |
+| `NEXOS_RETENTION_ALERTS` | `2160h` | Retencja rozwiązanych alertów |
+| `NEXOS_UPDATE_CHECK_INTERVAL` | `6h` | Co ile sprawdzać nowe wersje obrazów (`0` wyłącza) |
 | `NEXOS_TRUSTED_PROXIES` | | CIDR-y proxy, którym ufamy w `X-Forwarded-For` |
 | `NEXOS_SETUP_TOKEN` | losowy | Token pierwszej konfiguracji |
 | **Agent** | | |

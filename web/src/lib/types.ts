@@ -139,7 +139,9 @@ export type LiveEvent =
   | { type: "host.metrics"; host_id: string; data: HostMetrics }
   | { type: "host.info"; host_id: string; data: HostInfo }
   | { type: "host.status"; host_id: string; data: { status: HostStatus; error?: string; since: string } }
-  | { type: "docker.event"; host_id: string; data: DockerEvent };
+  | { type: "docker.event"; host_id: string; data: DockerEvent }
+  | { type: "alert.fired" | "alert.resolved"; host_id?: string; data: unknown }
+  | { type: "updates.checked"; host_id: string; data: { images: number; updates: number } };
 
 export interface ContainerPort {
   ip?: string;
@@ -300,3 +302,80 @@ export interface StackDetail {
 export type StackOperation = "up" | "down" | "pull" | "restart" | "stop" | "start";
 
 export type StreamMsg = { line?: string; exit_code?: number; error?: string };
+
+export interface ImageUpdateInfo {
+  agent_id: string;
+  reference: string;
+  display: string;
+  local_image_id?: string;
+  remote_digest?: string;
+  update_available: boolean;
+  error?: string;
+  containers: string[];
+  checked_at: string;
+}
+
+export interface AlertEvent {
+  id: number;
+  rule_id: number;
+  rule_name: string;
+  rule_type: string;
+  agent_id: string;
+  host_name: string;
+  subject?: string;
+  value: number;
+  message: string;
+  started_at: string;
+  resolved_at?: string;
+}
+
+export interface AlertRule {
+  id: number;
+  name: string;
+  type: string;
+  agent_id?: string;
+  threshold: number;
+  duration_s: number;
+  target: string;
+  channels: number[];
+  enabled: boolean;
+  created_at?: string;
+}
+
+export type ChannelType = "ntfy" | "discord" | "telegram" | "webhook" | "email";
+
+export interface ChannelConfig {
+  url?: string;
+  token?: string;
+  priority?: number;
+  webhook_url?: string;
+  bot_token?: string;
+  chat_id?: string;
+  secret?: string;
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  from?: string;
+  to?: string;
+  security?: string;
+}
+
+export interface AlertChannel {
+  id: number;
+  name: string;
+  type: ChannelType;
+  enabled: boolean;
+  created_at: string;
+  config: ChannelConfig;
+  secrets_set: string[];
+}
+
+export interface ContainerPoint {
+  ts: number;
+  cpu: number;
+  mem: number;
+  mem_limit: number;
+  net_rx: number;
+  net_tx: number;
+}

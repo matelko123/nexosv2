@@ -2131,6 +2131,198 @@ func (x *PruneVolumesResponse) GetResult() *PruneResult {
 	return nil
 }
 
+type CheckImageUpdatesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	References    []string               `protobuf:"bytes,1,rep,name=references,proto3" json:"references,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckImageUpdatesRequest) Reset() {
+	*x = CheckImageUpdatesRequest{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckImageUpdatesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckImageUpdatesRequest) ProtoMessage() {}
+
+func (x *CheckImageUpdatesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckImageUpdatesRequest.ProtoReflect.Descriptor instead.
+func (*CheckImageUpdatesRequest) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *CheckImageUpdatesRequest) GetReferences() []string {
+	if x != nil {
+		return x.References
+	}
+	return nil
+}
+
+type ImageUpdate struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Normalized reference, e.g. "docker.io/library/nginx:1.27-alpine".
+	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
+	// As written in the container config, e.g. "nginx:1.27-alpine".
+	Display         string `protobuf:"bytes,2,opt,name=display,proto3" json:"display,omitempty"`
+	LocalImageId    string `protobuf:"bytes,3,opt,name=local_image_id,json=localImageId,proto3" json:"local_image_id,omitempty"`
+	RemoteDigest    string `protobuf:"bytes,4,opt,name=remote_digest,json=remoteDigest,proto3" json:"remote_digest,omitempty"`
+	UpdateAvailable bool   `protobuf:"varint,5,opt,name=update_available,json=updateAvailable,proto3" json:"update_available,omitempty"`
+	// Set when the registry could not be queried (private, rate limited...).
+	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	// Containers using this reference.
+	Containers    []string `protobuf:"bytes,7,rep,name=containers,proto3" json:"containers,omitempty"`
+	CheckedUnix   int64    `protobuf:"varint,8,opt,name=checked_unix,json=checkedUnix,proto3" json:"checked_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageUpdate) Reset() {
+	*x = ImageUpdate{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageUpdate) ProtoMessage() {}
+
+func (x *ImageUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageUpdate.ProtoReflect.Descriptor instead.
+func (*ImageUpdate) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *ImageUpdate) GetReference() string {
+	if x != nil {
+		return x.Reference
+	}
+	return ""
+}
+
+func (x *ImageUpdate) GetDisplay() string {
+	if x != nil {
+		return x.Display
+	}
+	return ""
+}
+
+func (x *ImageUpdate) GetLocalImageId() string {
+	if x != nil {
+		return x.LocalImageId
+	}
+	return ""
+}
+
+func (x *ImageUpdate) GetRemoteDigest() string {
+	if x != nil {
+		return x.RemoteDigest
+	}
+	return ""
+}
+
+func (x *ImageUpdate) GetUpdateAvailable() bool {
+	if x != nil {
+		return x.UpdateAvailable
+	}
+	return false
+}
+
+func (x *ImageUpdate) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *ImageUpdate) GetContainers() []string {
+	if x != nil {
+		return x.Containers
+	}
+	return nil
+}
+
+func (x *ImageUpdate) GetCheckedUnix() int64 {
+	if x != nil {
+		return x.CheckedUnix
+	}
+	return 0
+}
+
+type CheckImageUpdatesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Updates       []*ImageUpdate         `protobuf:"bytes,1,rep,name=updates,proto3" json:"updates,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckImageUpdatesResponse) Reset() {
+	*x = CheckImageUpdatesResponse{}
+	mi := &file_nexos_v1_resources_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckImageUpdatesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckImageUpdatesResponse) ProtoMessage() {}
+
+func (x *CheckImageUpdatesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_nexos_v1_resources_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckImageUpdatesResponse.ProtoReflect.Descriptor instead.
+func (*CheckImageUpdatesResponse) Descriptor() ([]byte, []int) {
+	return file_nexos_v1_resources_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *CheckImageUpdatesResponse) GetUpdates() []*ImageUpdate {
+	if x != nil {
+		return x.Updates
+	}
+	return nil
+}
+
 var File_nexos_v1_resources_proto protoreflect.FileDescriptor
 
 const file_nexos_v1_resources_proto_rawDesc = "" +
@@ -2295,14 +2487,32 @@ const file_nexos_v1_resources_proto_rawDesc = "" +
 	"\x15PruneNetworksResponse\x12-\n" +
 	"\x06result\x18\x01 \x01(\v2\x15.nexos.v1.PruneResultR\x06result\"E\n" +
 	"\x14PruneVolumesResponse\x12-\n" +
-	"\x06result\x18\x01 \x01(\v2\x15.nexos.v1.PruneResultR\x06result2\x86\x03\n" +
+	"\x06result\x18\x01 \x01(\v2\x15.nexos.v1.PruneResultR\x06result\":\n" +
+	"\x18CheckImageUpdatesRequest\x12\x1e\n" +
+	"\n" +
+	"references\x18\x01 \x03(\tR\n" +
+	"references\"\x94\x02\n" +
+	"\vImageUpdate\x12\x1c\n" +
+	"\treference\x18\x01 \x01(\tR\treference\x12\x18\n" +
+	"\adisplay\x18\x02 \x01(\tR\adisplay\x12$\n" +
+	"\x0elocal_image_id\x18\x03 \x01(\tR\flocalImageId\x12#\n" +
+	"\rremote_digest\x18\x04 \x01(\tR\fremoteDigest\x12)\n" +
+	"\x10update_available\x18\x05 \x01(\bR\x0fupdateAvailable\x12\x14\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\x12\x1e\n" +
+	"\n" +
+	"containers\x18\a \x03(\tR\n" +
+	"containers\x12!\n" +
+	"\fchecked_unix\x18\b \x01(\x03R\vcheckedUnix\"L\n" +
+	"\x19CheckImageUpdatesResponse\x12/\n" +
+	"\aupdates\x18\x01 \x03(\v2\x15.nexos.v1.ImageUpdateR\aupdates2\xe4\x03\n" +
 	"\fImageService\x12G\n" +
 	"\n" +
 	"ListImages\x12\x1b.nexos.v1.ListImagesRequest\x1a\x1c.nexos.v1.ListImagesResponse\x12M\n" +
 	"\fInspectImage\x12\x1d.nexos.v1.InspectImageRequest\x1a\x1e.nexos.v1.InspectImageResponse\x12F\n" +
 	"\tPullImage\x12\x1a.nexos.v1.PullImageRequest\x1a\x1b.nexos.v1.PullImageResponse0\x01\x12J\n" +
 	"\vRemoveImage\x12\x1c.nexos.v1.RemoveImageRequest\x1a\x1d.nexos.v1.RemoveImageResponse\x12J\n" +
-	"\vPruneImages\x12\x1c.nexos.v1.PruneImagesRequest\x1a\x1d.nexos.v1.PruneImagesResponse2\xdd\x04\n" +
+	"\vPruneImages\x12\x1c.nexos.v1.PruneImagesRequest\x1a\x1d.nexos.v1.PruneImagesResponse\x12\\\n" +
+	"\x11CheckImageUpdates\x12\".nexos.v1.CheckImageUpdatesRequest\x1a#.nexos.v1.CheckImageUpdatesResponse2\xdd\x04\n" +
 	"\x0eNetworkService\x12M\n" +
 	"\fListNetworks\x12\x1d.nexos.v1.ListNetworksRequest\x1a\x1e.nexos.v1.ListNetworksResponse\x12S\n" +
 	"\x0eInspectNetwork\x12\x1f.nexos.v1.InspectNetworkRequest\x1a .nexos.v1.InspectNetworkResponse\x12P\n" +
@@ -2330,7 +2540,7 @@ func file_nexos_v1_resources_proto_rawDescGZIP() []byte {
 	return file_nexos_v1_resources_proto_rawDescData
 }
 
-var file_nexos_v1_resources_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
+var file_nexos_v1_resources_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
 var file_nexos_v1_resources_proto_goTypes = []any{
 	(*Image)(nil),                     // 0: nexos.v1.Image
 	(*ListImagesRequest)(nil),         // 1: nexos.v1.ListImagesRequest
@@ -2371,69 +2581,75 @@ var file_nexos_v1_resources_proto_goTypes = []any{
 	(*PruneImagesResponse)(nil),       // 36: nexos.v1.PruneImagesResponse
 	(*PruneNetworksResponse)(nil),     // 37: nexos.v1.PruneNetworksResponse
 	(*PruneVolumesResponse)(nil),      // 38: nexos.v1.PruneVolumesResponse
-	nil,                               // 39: nexos.v1.Image.LabelsEntry
-	nil,                               // 40: nexos.v1.Network.LabelsEntry
-	nil,                               // 41: nexos.v1.CreateNetworkRequest.OptionsEntry
-	nil,                               // 42: nexos.v1.Volume.LabelsEntry
-	nil,                               // 43: nexos.v1.Volume.OptionsEntry
-	nil,                               // 44: nexos.v1.CreateVolumeRequest.DriverOptionsEntry
-	nil,                               // 45: nexos.v1.CreateVolumeRequest.LabelsEntry
+	(*CheckImageUpdatesRequest)(nil),  // 39: nexos.v1.CheckImageUpdatesRequest
+	(*ImageUpdate)(nil),               // 40: nexos.v1.ImageUpdate
+	(*CheckImageUpdatesResponse)(nil), // 41: nexos.v1.CheckImageUpdatesResponse
+	nil,                               // 42: nexos.v1.Image.LabelsEntry
+	nil,                               // 43: nexos.v1.Network.LabelsEntry
+	nil,                               // 44: nexos.v1.CreateNetworkRequest.OptionsEntry
+	nil,                               // 45: nexos.v1.Volume.LabelsEntry
+	nil,                               // 46: nexos.v1.Volume.OptionsEntry
+	nil,                               // 47: nexos.v1.CreateVolumeRequest.DriverOptionsEntry
+	nil,                               // 48: nexos.v1.CreateVolumeRequest.LabelsEntry
 }
 var file_nexos_v1_resources_proto_depIdxs = []int32{
-	39, // 0: nexos.v1.Image.labels:type_name -> nexos.v1.Image.LabelsEntry
+	42, // 0: nexos.v1.Image.labels:type_name -> nexos.v1.Image.LabelsEntry
 	0,  // 1: nexos.v1.ListImagesResponse.images:type_name -> nexos.v1.Image
-	40, // 2: nexos.v1.Network.labels:type_name -> nexos.v1.Network.LabelsEntry
+	43, // 2: nexos.v1.Network.labels:type_name -> nexos.v1.Network.LabelsEntry
 	11, // 3: nexos.v1.Network.endpoints:type_name -> nexos.v1.NetworkEndpoint
 	12, // 4: nexos.v1.ListNetworksResponse.networks:type_name -> nexos.v1.Network
-	41, // 5: nexos.v1.CreateNetworkRequest.options:type_name -> nexos.v1.CreateNetworkRequest.OptionsEntry
-	42, // 6: nexos.v1.Volume.labels:type_name -> nexos.v1.Volume.LabelsEntry
-	43, // 7: nexos.v1.Volume.options:type_name -> nexos.v1.Volume.OptionsEntry
+	44, // 5: nexos.v1.CreateNetworkRequest.options:type_name -> nexos.v1.CreateNetworkRequest.OptionsEntry
+	45, // 6: nexos.v1.Volume.labels:type_name -> nexos.v1.Volume.LabelsEntry
+	46, // 7: nexos.v1.Volume.options:type_name -> nexos.v1.Volume.OptionsEntry
 	26, // 8: nexos.v1.ListVolumesResponse.volumes:type_name -> nexos.v1.Volume
-	44, // 9: nexos.v1.CreateVolumeRequest.driver_options:type_name -> nexos.v1.CreateVolumeRequest.DriverOptionsEntry
-	45, // 10: nexos.v1.CreateVolumeRequest.labels:type_name -> nexos.v1.CreateVolumeRequest.LabelsEntry
+	47, // 9: nexos.v1.CreateVolumeRequest.driver_options:type_name -> nexos.v1.CreateVolumeRequest.DriverOptionsEntry
+	48, // 10: nexos.v1.CreateVolumeRequest.labels:type_name -> nexos.v1.CreateVolumeRequest.LabelsEntry
 	26, // 11: nexos.v1.CreateVolumeResponse.volume:type_name -> nexos.v1.Volume
 	10, // 12: nexos.v1.PruneImagesResponse.result:type_name -> nexos.v1.PruneResult
 	10, // 13: nexos.v1.PruneNetworksResponse.result:type_name -> nexos.v1.PruneResult
 	10, // 14: nexos.v1.PruneVolumesResponse.result:type_name -> nexos.v1.PruneResult
-	1,  // 15: nexos.v1.ImageService.ListImages:input_type -> nexos.v1.ListImagesRequest
-	3,  // 16: nexos.v1.ImageService.InspectImage:input_type -> nexos.v1.InspectImageRequest
-	5,  // 17: nexos.v1.ImageService.PullImage:input_type -> nexos.v1.PullImageRequest
-	7,  // 18: nexos.v1.ImageService.RemoveImage:input_type -> nexos.v1.RemoveImageRequest
-	9,  // 19: nexos.v1.ImageService.PruneImages:input_type -> nexos.v1.PruneImagesRequest
-	13, // 20: nexos.v1.NetworkService.ListNetworks:input_type -> nexos.v1.ListNetworksRequest
-	15, // 21: nexos.v1.NetworkService.InspectNetwork:input_type -> nexos.v1.InspectNetworkRequest
-	17, // 22: nexos.v1.NetworkService.CreateNetwork:input_type -> nexos.v1.CreateNetworkRequest
-	19, // 23: nexos.v1.NetworkService.RemoveNetwork:input_type -> nexos.v1.RemoveNetworkRequest
-	21, // 24: nexos.v1.NetworkService.ConnectNetwork:input_type -> nexos.v1.ConnectNetworkRequest
-	23, // 25: nexos.v1.NetworkService.DisconnectNetwork:input_type -> nexos.v1.DisconnectNetworkRequest
-	25, // 26: nexos.v1.NetworkService.PruneNetworks:input_type -> nexos.v1.PruneNetworksRequest
-	27, // 27: nexos.v1.VolumeService.ListVolumes:input_type -> nexos.v1.ListVolumesRequest
-	29, // 28: nexos.v1.VolumeService.InspectVolume:input_type -> nexos.v1.InspectVolumeRequest
-	31, // 29: nexos.v1.VolumeService.CreateVolume:input_type -> nexos.v1.CreateVolumeRequest
-	33, // 30: nexos.v1.VolumeService.RemoveVolume:input_type -> nexos.v1.RemoveVolumeRequest
-	35, // 31: nexos.v1.VolumeService.PruneVolumes:input_type -> nexos.v1.PruneVolumesRequest
-	2,  // 32: nexos.v1.ImageService.ListImages:output_type -> nexos.v1.ListImagesResponse
-	4,  // 33: nexos.v1.ImageService.InspectImage:output_type -> nexos.v1.InspectImageResponse
-	6,  // 34: nexos.v1.ImageService.PullImage:output_type -> nexos.v1.PullImageResponse
-	8,  // 35: nexos.v1.ImageService.RemoveImage:output_type -> nexos.v1.RemoveImageResponse
-	36, // 36: nexos.v1.ImageService.PruneImages:output_type -> nexos.v1.PruneImagesResponse
-	14, // 37: nexos.v1.NetworkService.ListNetworks:output_type -> nexos.v1.ListNetworksResponse
-	16, // 38: nexos.v1.NetworkService.InspectNetwork:output_type -> nexos.v1.InspectNetworkResponse
-	18, // 39: nexos.v1.NetworkService.CreateNetwork:output_type -> nexos.v1.CreateNetworkResponse
-	20, // 40: nexos.v1.NetworkService.RemoveNetwork:output_type -> nexos.v1.RemoveNetworkResponse
-	22, // 41: nexos.v1.NetworkService.ConnectNetwork:output_type -> nexos.v1.ConnectNetworkResponse
-	24, // 42: nexos.v1.NetworkService.DisconnectNetwork:output_type -> nexos.v1.DisconnectNetworkResponse
-	37, // 43: nexos.v1.NetworkService.PruneNetworks:output_type -> nexos.v1.PruneNetworksResponse
-	28, // 44: nexos.v1.VolumeService.ListVolumes:output_type -> nexos.v1.ListVolumesResponse
-	30, // 45: nexos.v1.VolumeService.InspectVolume:output_type -> nexos.v1.InspectVolumeResponse
-	32, // 46: nexos.v1.VolumeService.CreateVolume:output_type -> nexos.v1.CreateVolumeResponse
-	34, // 47: nexos.v1.VolumeService.RemoveVolume:output_type -> nexos.v1.RemoveVolumeResponse
-	38, // 48: nexos.v1.VolumeService.PruneVolumes:output_type -> nexos.v1.PruneVolumesResponse
-	32, // [32:49] is the sub-list for method output_type
-	15, // [15:32] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	40, // 15: nexos.v1.CheckImageUpdatesResponse.updates:type_name -> nexos.v1.ImageUpdate
+	1,  // 16: nexos.v1.ImageService.ListImages:input_type -> nexos.v1.ListImagesRequest
+	3,  // 17: nexos.v1.ImageService.InspectImage:input_type -> nexos.v1.InspectImageRequest
+	5,  // 18: nexos.v1.ImageService.PullImage:input_type -> nexos.v1.PullImageRequest
+	7,  // 19: nexos.v1.ImageService.RemoveImage:input_type -> nexos.v1.RemoveImageRequest
+	9,  // 20: nexos.v1.ImageService.PruneImages:input_type -> nexos.v1.PruneImagesRequest
+	39, // 21: nexos.v1.ImageService.CheckImageUpdates:input_type -> nexos.v1.CheckImageUpdatesRequest
+	13, // 22: nexos.v1.NetworkService.ListNetworks:input_type -> nexos.v1.ListNetworksRequest
+	15, // 23: nexos.v1.NetworkService.InspectNetwork:input_type -> nexos.v1.InspectNetworkRequest
+	17, // 24: nexos.v1.NetworkService.CreateNetwork:input_type -> nexos.v1.CreateNetworkRequest
+	19, // 25: nexos.v1.NetworkService.RemoveNetwork:input_type -> nexos.v1.RemoveNetworkRequest
+	21, // 26: nexos.v1.NetworkService.ConnectNetwork:input_type -> nexos.v1.ConnectNetworkRequest
+	23, // 27: nexos.v1.NetworkService.DisconnectNetwork:input_type -> nexos.v1.DisconnectNetworkRequest
+	25, // 28: nexos.v1.NetworkService.PruneNetworks:input_type -> nexos.v1.PruneNetworksRequest
+	27, // 29: nexos.v1.VolumeService.ListVolumes:input_type -> nexos.v1.ListVolumesRequest
+	29, // 30: nexos.v1.VolumeService.InspectVolume:input_type -> nexos.v1.InspectVolumeRequest
+	31, // 31: nexos.v1.VolumeService.CreateVolume:input_type -> nexos.v1.CreateVolumeRequest
+	33, // 32: nexos.v1.VolumeService.RemoveVolume:input_type -> nexos.v1.RemoveVolumeRequest
+	35, // 33: nexos.v1.VolumeService.PruneVolumes:input_type -> nexos.v1.PruneVolumesRequest
+	2,  // 34: nexos.v1.ImageService.ListImages:output_type -> nexos.v1.ListImagesResponse
+	4,  // 35: nexos.v1.ImageService.InspectImage:output_type -> nexos.v1.InspectImageResponse
+	6,  // 36: nexos.v1.ImageService.PullImage:output_type -> nexos.v1.PullImageResponse
+	8,  // 37: nexos.v1.ImageService.RemoveImage:output_type -> nexos.v1.RemoveImageResponse
+	36, // 38: nexos.v1.ImageService.PruneImages:output_type -> nexos.v1.PruneImagesResponse
+	41, // 39: nexos.v1.ImageService.CheckImageUpdates:output_type -> nexos.v1.CheckImageUpdatesResponse
+	14, // 40: nexos.v1.NetworkService.ListNetworks:output_type -> nexos.v1.ListNetworksResponse
+	16, // 41: nexos.v1.NetworkService.InspectNetwork:output_type -> nexos.v1.InspectNetworkResponse
+	18, // 42: nexos.v1.NetworkService.CreateNetwork:output_type -> nexos.v1.CreateNetworkResponse
+	20, // 43: nexos.v1.NetworkService.RemoveNetwork:output_type -> nexos.v1.RemoveNetworkResponse
+	22, // 44: nexos.v1.NetworkService.ConnectNetwork:output_type -> nexos.v1.ConnectNetworkResponse
+	24, // 45: nexos.v1.NetworkService.DisconnectNetwork:output_type -> nexos.v1.DisconnectNetworkResponse
+	37, // 46: nexos.v1.NetworkService.PruneNetworks:output_type -> nexos.v1.PruneNetworksResponse
+	28, // 47: nexos.v1.VolumeService.ListVolumes:output_type -> nexos.v1.ListVolumesResponse
+	30, // 48: nexos.v1.VolumeService.InspectVolume:output_type -> nexos.v1.InspectVolumeResponse
+	32, // 49: nexos.v1.VolumeService.CreateVolume:output_type -> nexos.v1.CreateVolumeResponse
+	34, // 50: nexos.v1.VolumeService.RemoveVolume:output_type -> nexos.v1.RemoveVolumeResponse
+	38, // 51: nexos.v1.VolumeService.PruneVolumes:output_type -> nexos.v1.PruneVolumesResponse
+	34, // [34:52] is the sub-list for method output_type
+	16, // [16:34] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_nexos_v1_resources_proto_init() }
@@ -2447,7 +2663,7 @@ func file_nexos_v1_resources_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_nexos_v1_resources_proto_rawDesc), len(file_nexos_v1_resources_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   46,
+			NumMessages:   49,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

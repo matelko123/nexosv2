@@ -8,7 +8,7 @@ import { Chart } from "../components/Chart";
 import { ErrorText, Field, Modal, PanelHeader, SegmentMeter, Stat, StatusLamp } from "../components/ui";
 import { EnrollInstructions } from "./Hosts";
 
-const RANGES = ["15m", "1h", "6h", "24h"] as const;
+const RANGES = ["15m", "1h", "6h", "24h", "7d", "30d", "90d"] as const;
 const C = { amber: "#ffb000", cyan: "#5ccfe6", signal: "#4ade80", alarm: "#ff5a4e" };
 
 export function HostDetailPage({ me }: { me: Me }) {

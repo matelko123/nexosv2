@@ -101,6 +101,13 @@ export function useLiveEvents(qc: QueryClient, enabled: boolean) {
               metrics: ev.data.status === "online" ? h.metrics : undefined,
             }));
             break;
+          case "alert.fired":
+          case "alert.resolved":
+            scheduleRefetch(qc, ["alerts"]);
+            break;
+          case "updates.checked":
+            scheduleRefetch(qc, ["updates"]);
+            break;
           case "docker.event":
             // Bursts (compose up, prune) arrive as many events: refetch once.
             switch (ev.data.type) {

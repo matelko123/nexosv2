@@ -519,32 +519,5 @@ func (s *Store) InsertMetric(ctx context.Context, agentID string, p MetricPoint)
 // Metrics returns samples of an agent since the given time, averaged into
 // buckets of bucketMs milliseconds (0 = raw).
 func (s *Store) Metrics(ctx context.Context, agentID string, since time.Time, bucketMs int64) ([]MetricPoint, error) {
-	if bucketMs < 1 {
-		bucketMs = 1
-	}
-	rows, err := s.db.QueryContext(ctx, `SELECT (ts / ?) * ? AS b, AVG(cpu), AVG(mem_used), MAX(mem_total), AVG(swap_used), AVG(load1),
-		AVG(net_rx), AVG(net_tx), AVG(disk_read), AVG(disk_write)
-		FROM host_metrics WHERE agent_id = ? AND ts >= ? GROUP BY b ORDER BY b`,
-		bucketMs, bucketMs, agentID, since.UnixMilli())
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []MetricPoint
-	for rows.Next() {
-		var p MetricPoint
-		var memUsed, swapUsed float64
-		var memTotal int64
-		if err := rows.Scan(&p.TS, &p.CPU, &memUsed, &memTotal, &swapUsed, &p.Load1, &p.NetRx, &p.NetTx, &p.DiskRead, &p.DiskWrite); err != nil {
-			return nil, err
-		}
-		p.MemUsed, p.MemTotal, p.SwapUsed = uint64(memUsed), uint64(memTotal), uint64(swapUsed)
-		out = append(out, p)
-	}
-	return out, rows.Err()
-}
-
-func (s *Store) PruneMetrics(ctx context.Context, before time.Time) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM host_metrics WHERE ts < ?`, before.UnixMilli())
-	return err
+	return s.MetricsFrom(ctx, MetricsRaw, agentID, since, bucketMs)
 }

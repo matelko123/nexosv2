@@ -18,11 +18,13 @@ import (
 	"time"
 
 	"nexos/hub/agents"
+	"nexos/hub/alerts"
 	"nexos/hub/api"
 	"nexos/hub/auth"
 	"nexos/hub/certs"
 	"nexos/hub/events"
 	"nexos/hub/store"
+	"nexos/hub/updates"
 	"nexos/internal/pki"
 	"nexos/web"
 )
@@ -78,9 +80,24 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("NEXOS_METRICS_INTERVAL: %w", err)
 	}
-	retention, err := time.ParseDuration(env("NEXOS_METRICS_RETENTION", "24h"))
-	if err != nil {
-		return fmt.Errorf("NEXOS_METRICS_RETENTION: %w", err)
+	var retention store.Retention
+	updateInterval := time.Duration(0)
+	for _, d := range []struct {
+		env, def string
+		dst      *time.Duration
+	}{
+		{"NEXOS_METRICS_RETENTION", "24h", &retention.Raw},
+		{"NEXOS_RETENTION_1M", "168h", &retention.OneMinute},
+		{"NEXOS_RETENTION_5M", "2160h", &retention.FiveMinute},
+		{"NEXOS_RETENTION_CONTAINERS", "168h", &retention.Container},
+		{"NEXOS_RETENTION_ALERTS", "2160h", &retention.Events},
+		{"NEXOS_UPDATE_CHECK_INTERVAL", "6h", &updateInterval},
+	} {
+		v, err := time.ParseDuration(env(d.env, d.def))
+		if err != nil {
+			return fmt.Errorf("%s: %w", d.env, err)
+		}
+		*d.dst = v
 	}
 
 	bus := events.NewBus()
@@ -88,7 +105,11 @@ func run() error {
 	if err := mgr.Start(ctx); err != nil {
 		return err
 	}
-	go pruneMetrics(ctx, st, retention)
+	go maintainHistory(ctx, st, retention)
+	checker := updates.NewChecker(st, mgr, bus, updateInterval)
+	go checker.Run(ctx)
+	engine := alerts.NewEngine(st, mgr, bus, sealer)
+	go engine.Run(ctx)
 
 	// Enrollment endpoint (agents only, intended for the WireGuard address).
 	enrollListen := os.Getenv("NEXOS_ENROLL_LISTEN")
@@ -131,7 +152,7 @@ func run() error {
 		HSTS:            uiTLS == "auto",
 		TrustedProxies:  trusted,
 		Static:          web.Dist(),
-	}, st, mgr, bus, sealer)
+	}, st, mgr, bus, sealer, engine, checker)
 	go apiSrv.Maintenance(ctx)
 
 	ui := &http.Server{
@@ -191,16 +212,22 @@ func serve(ctx context.Context, srv *http.Server, useTLS bool, name string) {
 	}
 }
 
-func pruneMetrics(ctx context.Context, st *store.Store, retention time.Duration) {
-	t := time.NewTicker(10 * time.Minute)
+func maintainHistory(ctx context.Context, st *store.Store, retention store.Retention) {
+	// Roll up every minute; prune less often.
+	t := time.NewTicker(time.Minute)
 	defer t.Stop()
-	for {
+	for i := 0; ; i++ {
 		select {
 		case <-ctx.Done():
 			return
-		case <-t.C:
-			if err := st.PruneMetrics(ctx, time.Now().Add(-retention)); err != nil {
-				slog.Warn("prune metrics", "err", err)
+		case now := <-t.C:
+			if err := st.RollupHostMetrics(ctx, now); err != nil {
+				slog.Warn("metrics rollup", "err", err)
+			}
+			if i%10 == 0 {
+				if err := st.PruneHistory(ctx, now, retention); err != nil {
+					slog.Warn("prune history", "err", err)
+				}
 			}
 		}
 	}

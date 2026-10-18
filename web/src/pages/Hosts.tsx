@@ -6,9 +6,11 @@ import { useLiveHistory } from "../lib/live";
 import { bytes, duration, pct, rate } from "../lib/format";
 import type { Enrollment, Host, Me } from "../lib/types";
 import { CopyBox, ErrorText, Field, Modal, SegmentMeter, Sparkline, StatusLamp } from "../components/ui";
+import { isInfo, useActiveAlerts } from "./Alerts";
 
 export function HostsPage({ me }: { me: Me }) {
   const hosts = useQuery({ queryKey: ["hosts"], queryFn: api.hosts });
+  const alerts = useActiveAlerts();
   const [adding, setAdding] = useState(false);
   const isAdmin = me.user.role === "admin";
 
@@ -40,7 +42,7 @@ export function HostsPage({ me }: { me: Me }) {
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))]">
         {hosts.data?.map((h, i) => (
           <div key={h.id} className="rise" style={{ animationDelay: `${60 + i * 50}ms` }}>
-            {h.status === "pending" ? <PendingCard host={h} isAdmin={isAdmin} /> : <HostCard host={h} />}
+            {h.status === "pending" ? <PendingCard host={h} isAdmin={isAdmin} /> : <HostCard host={h} alerts={alerts.data?.filter((a) => a.agent_id === h.id && !isInfo(a)).length ?? 0} />}
           </div>
         ))}
       </div>
@@ -50,7 +52,7 @@ export function HostsPage({ me }: { me: Me }) {
   );
 }
 
-function HostCard({ host }: { host: Host }) {
+function HostCard({ host, alerts }: { host: Host; alerts: number }) {
   const m = host.metrics;
   const hist = useLiveHistory(host.id);
   const memPct = m?.memory_total_bytes ? ((m.memory_used_bytes ?? 0) / m.memory_total_bytes) * 100 : 0;
@@ -67,7 +69,10 @@ function HostCard({ host }: { host: Host }) {
             {host.info?.hostname ?? host.hostname} · {host.address}
           </div>
         </div>
-        <StatusLamp status={host.status} />
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <StatusLamp status={host.status} />
+          {alerts > 0 && <span className="readout bg-alarm px-1.5 text-[10px] text-chassis">{alerts} {alerts === 1 ? "alert" : "alerty"}</span>}
+        </div>
       </div>
 
       <div className={`space-y-4 p-4 ${off ? "opacity-40" : ""}`}>

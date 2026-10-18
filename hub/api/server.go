@@ -20,9 +20,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"nexos/hub/agents"
+	"nexos/hub/alerts"
 	"nexos/hub/auth"
 	"nexos/hub/events"
 	"nexos/hub/store"
+	"nexos/hub/updates"
 )
 
 const (
@@ -49,11 +51,13 @@ type Config struct {
 }
 
 type Server struct {
-	cfg    Config
-	store  *store.Store
-	agents *agents.Manager
-	bus    *events.Bus
-	sealer *auth.Sealer
+	cfg     Config
+	store   *store.Store
+	agents  *agents.Manager
+	bus     *events.Bus
+	sealer  *auth.Sealer
+	alerts  *alerts.Engine
+	updates *updates.Checker
 
 	loginByIP   *auth.Limiter
 	loginByUser *auth.Limiter
@@ -62,9 +66,9 @@ type Server struct {
 	setups  map[string]*pendingSetup
 }
 
-func New(cfg Config, st *store.Store, mgr *agents.Manager, bus *events.Bus, sealer *auth.Sealer) *Server {
+func New(cfg Config, st *store.Store, mgr *agents.Manager, bus *events.Bus, sealer *auth.Sealer, eng *alerts.Engine, chk *updates.Checker) *Server {
 	return &Server{
-		cfg: cfg, store: st, agents: mgr, bus: bus, sealer: sealer,
+		cfg: cfg, store: st, agents: mgr, bus: bus, sealer: sealer, alerts: eng, updates: chk,
 		loginByIP:   auth.NewLimiter(12*time.Second, 10), // 10 burst, then 5/min
 		loginByUser: auth.NewLimiter(time.Minute, 5),
 		setups:      map[string]*pendingSetup{},
@@ -103,6 +107,11 @@ func (s *Server) Handler() http.Handler {
 			r.Get("/hosts/{id}/volumes", s.handleListVolumes)
 			r.Get("/hosts/{id}/volumes/{vname}/inspect", s.handleInspectVolume)
 			r.Get("/hosts/{id}/stacks", s.handleListStacks)
+			r.Get("/hosts/{id}/container-history/{name}", s.handleContainerHistory)
+			r.Get("/hosts/{id}/updates", s.handleListUpdates)
+			r.Get("/updates", s.handleAllUpdates)
+			r.Get("/alerts", s.handleAlertEvents)
+			r.Get("/alerts/rules", s.handleAlertRules)
 
 			r.Group(func(r chi.Router) {
 				r.Use(requireRole("operator"))
@@ -114,6 +123,7 @@ func (s *Server) Handler() http.Handler {
 				r.Post("/hosts/{id}/networks/{nid}/disconnect", s.handleNetworkMembership(false))
 				r.Get("/hosts/{id}/stacks/{sname}", s.handleGetStack)
 				r.Post("/hosts/{id}/stacks/{sname}/run", s.handleRunStack)
+				r.Post("/hosts/{id}/updates/check", s.handleCheckUpdates)
 			})
 
 			// Anything that deletes data or can grant host access (a compose
@@ -132,6 +142,15 @@ func (s *Server) Handler() http.Handler {
 				r.Post("/hosts/{id}/stacks", s.handleCreateStack)
 				r.Put("/hosts/{id}/stacks/{sname}", s.handleUpdateStack)
 				r.Delete("/hosts/{id}/stacks/{sname}", s.handleDeleteStack)
+				r.Post("/alerts/rules", s.handleCreateRule)
+				r.Put("/alerts/rules/{rid}", s.handleUpdateRule)
+				r.Delete("/alerts/rules/{rid}", s.handleDeleteRule)
+				// Channel settings hold tokens and passwords (masked on read).
+				r.Get("/alerts/channels", s.handleAlertChannels)
+				r.Post("/alerts/channels", s.handleCreateChannel)
+				r.Put("/alerts/channels/{cid}", s.handleUpdateChannel)
+				r.Delete("/alerts/channels/{cid}", s.handleDeleteChannel)
+				r.Post("/alerts/channels/{cid}/test", s.handleTestChannel)
 			})
 
 			r.Group(func(r chi.Router) {

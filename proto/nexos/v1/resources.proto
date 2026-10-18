@@ -13,6 +13,9 @@ service ImageService {
   rpc PullImage(PullImageRequest) returns (stream PullImageResponse);
   rpc RemoveImage(RemoveImageRequest) returns (RemoveImageResponse);
   rpc PruneImages(PruneImagesRequest) returns (PruneImagesResponse);
+  // CheckImageUpdates compares local images with the registry. With no
+  // references, all tags used by containers on the host are checked.
+  rpc CheckImageUpdates(CheckImageUpdatesRequest) returns (CheckImageUpdatesResponse);
 }
 
 message Image {
@@ -241,4 +244,27 @@ message PruneNetworksResponse {
 
 message PruneVolumesResponse {
   PruneResult result = 1;
+}
+
+message CheckImageUpdatesRequest {
+  repeated string references = 1;
+}
+
+message ImageUpdate {
+  // Normalized reference, e.g. "docker.io/library/nginx:1.27-alpine".
+  string reference = 1;
+  // As written in the container config, e.g. "nginx:1.27-alpine".
+  string display = 2;
+  string local_image_id = 3;
+  string remote_digest = 4;
+  bool update_available = 5;
+  // Set when the registry could not be queried (private, rate limited...).
+  string error = 6;
+  // Containers using this reference.
+  repeated string containers = 7;
+  int64 checked_unix = 8;
+}
+
+message CheckImageUpdatesResponse {
+  repeated ImageUpdate updates = 1;
 }

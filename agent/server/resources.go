@@ -72,6 +72,17 @@ func (x *imageService) PruneImages(ctx context.Context, req *nexosv1.PruneImages
 	return &nexosv1.PruneImagesResponse{Result: res}, nil
 }
 
+func (x *imageService) CheckImageUpdates(ctx context.Context, req *nexosv1.CheckImageUpdatesRequest) (*nexosv1.CheckImageUpdatesResponse, error) {
+	if err := x.s.requireDocker(); err != nil {
+		return nil, err
+	}
+	list, err := x.s.docker.CheckImageUpdates(ctx, req.GetReferences())
+	if err != nil {
+		return nil, dockerErr(err)
+	}
+	return &nexosv1.CheckImageUpdatesResponse{Updates: list}, nil
+}
+
 // ---- networks ----
 
 type networkService struct {

@@ -1,12 +1,19 @@
 import type {
+  AlertChannel,
+  AlertEvent,
+  AlertRule,
   AuditEntry,
+  ChannelConfig,
+  ChannelType,
   Container,
+  ContainerPoint,
   ContainerAction,
   DockerImage,
   DockerNetwork,
   DockerVolume,
   Enrollment,
   Host,
+  ImageUpdateInfo,
   Me,
   MetricPoint,
   PruneResult,
@@ -143,6 +150,25 @@ export const resources = {
     streamRequest("POST", `/hosts/${h}/stacks/${name}/run`, b, on),
   deleteStack: (h: string, name: string, down: boolean, volumes: boolean, on: (m: StreamMsg) => void) =>
     streamRequest("DELETE", `/hosts/${h}/stacks/${name}?down=${down}&volumes=${volumes}`, undefined, on),
+};
+
+export const observability = {
+  updates: (h: string) => request<ImageUpdateInfo[]>("GET", `/hosts/${h}/updates`),
+  allUpdates: () => request<ImageUpdateInfo[]>("GET", "/updates"),
+  checkUpdates: (h: string) => request<ImageUpdateInfo[]>("POST", `/hosts/${h}/updates/check`),
+  containerHistory: (h: string, name: string, range: string) =>
+    request<ContainerPoint[]>("GET", `/hosts/${h}/container-history/${encodeURIComponent(name)}?range=${range}`),
+
+  alerts: (state: "open" | "all") => request<AlertEvent[]>("GET", `/alerts?state=${state}&limit=300`),
+  rules: () => request<{ rules: AlertRule[]; types: Record<string, string> }>("GET", "/alerts/rules"),
+  saveRule: (r: Omit<AlertRule, "id" | "created_at"> & { id?: number }) =>
+    r.id ? request<AlertRule>("PUT", `/alerts/rules/${r.id}`, r) : request<AlertRule>("POST", "/alerts/rules", r),
+  deleteRule: (id: number) => request<void>("DELETE", `/alerts/rules/${id}`),
+  channels: () => request<AlertChannel[]>("GET", "/alerts/channels"),
+  saveChannel: (c: { id?: number; name: string; type: ChannelType; enabled: boolean; config: ChannelConfig }) =>
+    c.id ? request<AlertChannel>("PUT", `/alerts/channels/${c.id}`, c) : request<AlertChannel>("POST", "/alerts/channels", c),
+  deleteChannel: (id: number) => request<void>("DELETE", `/alerts/channels/${id}`),
+  testChannel: (id: number) => request<void>("POST", `/alerts/channels/${id}/test`),
 };
 
 /** URL of a hub WebSocket endpoint on the current origin. */
