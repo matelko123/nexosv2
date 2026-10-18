@@ -1,0 +1,244 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// ---- images ----
+
+service ImageService {
+  rpc ListImages(ListImagesRequest) returns (ListImagesResponse);
+  rpc InspectImage(InspectImageRequest) returns (InspectImageResponse);
+  // PullImage streams pull progress until the image is available.
+  rpc PullImage(PullImageRequest) returns (stream PullImageResponse);
+  rpc RemoveImage(RemoveImageRequest) returns (RemoveImageResponse);
+  rpc PruneImages(PruneImagesRequest) returns (PruneImagesResponse);
+}
+
+message Image {
+  string id = 1;
+  repeated string repo_tags = 2;
+  repeated string repo_digests = 3;
+  int64 created_unix = 4;
+  int64 size_bytes = 5;
+  // Number of containers (any state) using this image; -1 if unknown.
+  int64 containers = 6;
+  map<string, string> labels = 7;
+}
+
+message ListImagesRequest {}
+
+message ListImagesResponse {
+  repeated Image images = 1;
+}
+
+message InspectImageRequest {
+  string id = 1;
+}
+
+message InspectImageResponse {
+  bytes json = 1;
+}
+
+message PullImageRequest {
+  // e.g. "nginx:1.27-alpine" or "ghcr.io/org/app:tag"
+  string reference = 1;
+}
+
+message PullImageResponse {
+  // Layer id (empty for whole-image status lines).
+  string id = 1;
+  string status = 2;
+  int64 current = 3;
+  int64 total = 4;
+  string error = 5;
+}
+
+message RemoveImageRequest {
+  string id = 1;
+  bool force = 2;
+}
+
+message RemoveImageResponse {
+  repeated string deleted = 1;
+  repeated string untagged = 2;
+}
+
+message PruneImagesRequest {
+  // false: only dangling images; true: all images not used by a container.
+  bool all = 1;
+}
+
+message PruneResult {
+  repeated string deleted = 1;
+  uint64 space_reclaimed_bytes = 2;
+}
+
+// ---- networks ----
+
+service NetworkService {
+  rpc ListNetworks(ListNetworksRequest) returns (ListNetworksResponse);
+  rpc InspectNetwork(InspectNetworkRequest) returns (InspectNetworkResponse);
+  rpc CreateNetwork(CreateNetworkRequest) returns (CreateNetworkResponse);
+  rpc RemoveNetwork(RemoveNetworkRequest) returns (RemoveNetworkResponse);
+  rpc ConnectNetwork(ConnectNetworkRequest) returns (ConnectNetworkResponse);
+  rpc DisconnectNetwork(DisconnectNetworkRequest) returns (DisconnectNetworkResponse);
+  rpc PruneNetworks(PruneNetworksRequest) returns (PruneNetworksResponse);
+}
+
+message NetworkEndpoint {
+  string container_id = 1;
+  string container_name = 2;
+  string ipv4 = 3;
+  string ipv6 = 4;
+  string mac = 5;
+}
+
+message Network {
+  string id = 1;
+  string name = 2;
+  string driver = 3;
+  string scope = 4;
+  bool internal = 5;
+  bool attachable = 6;
+  bool ipv6 = 7;
+  repeated string subnets = 8;
+  repeated string gateways = 9;
+  int64 created_unix = 10;
+  map<string, string> labels = 11;
+  repeated NetworkEndpoint endpoints = 12;
+  // bridge/host/none are created by Docker and cannot be removed.
+  bool builtin = 13;
+  string compose_project = 14;
+}
+
+message ListNetworksRequest {}
+
+message ListNetworksResponse {
+  repeated Network networks = 1;
+}
+
+message InspectNetworkRequest {
+  string id = 1;
+}
+
+message InspectNetworkResponse {
+  bytes json = 1;
+}
+
+message CreateNetworkRequest {
+  string name = 1;
+  // bridge (default), macvlan, ipvlan, overlay
+  string driver = 2;
+  bool internal = 3;
+  bool attachable = 4;
+  bool ipv6 = 5;
+  // Optional CIDR, e.g. 172.40.0.0/24
+  string subnet = 6;
+  string gateway = 7;
+  map<string, string> options = 8;
+}
+
+message CreateNetworkResponse {
+  string id = 1;
+  repeated string warnings = 2;
+}
+
+message RemoveNetworkRequest {
+  string id = 1;
+}
+
+message RemoveNetworkResponse {}
+
+message ConnectNetworkRequest {
+  string network_id = 1;
+  string container_id = 2;
+  repeated string aliases = 3;
+  string ipv4 = 4;
+}
+
+message ConnectNetworkResponse {}
+
+message DisconnectNetworkRequest {
+  string network_id = 1;
+  string container_id = 2;
+  bool force = 3;
+}
+
+message DisconnectNetworkResponse {}
+
+message PruneNetworksRequest {}
+
+// ---- volumes ----
+
+service VolumeService {
+  rpc ListVolumes(ListVolumesRequest) returns (ListVolumesResponse);
+  rpc InspectVolume(InspectVolumeRequest) returns (InspectVolumeResponse);
+  rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse);
+  rpc RemoveVolume(RemoveVolumeRequest) returns (RemoveVolumeResponse);
+  rpc PruneVolumes(PruneVolumesRequest) returns (PruneVolumesResponse);
+}
+
+message Volume {
+  string name = 1;
+  string driver = 2;
+  string mountpoint = 3;
+  string scope = 4;
+  int64 created_unix = 5;
+  map<string, string> labels = 6;
+  map<string, string> options = 7;
+  // Containers (any state) mounting this volume.
+  repeated string used_by = 8;
+  string compose_project = 9;
+  // Anonymous volumes have generated 64-hex names.
+  bool anonymous = 10;
+}
+
+message ListVolumesRequest {}
+
+message ListVolumesResponse {
+  repeated Volume volumes = 1;
+}
+
+message InspectVolumeRequest {
+  string name = 1;
+}
+
+message InspectVolumeResponse {
+  bytes json = 1;
+}
+
+message CreateVolumeRequest {
+  string name = 1;
+  string driver = 2;
+  map<string, string> driver_options = 3;
+  map<string, string> labels = 4;
+}
+
+message CreateVolumeResponse {
+  Volume volume = 1;
+}
+
+message RemoveVolumeRequest {
+  string name = 1;
+  bool force = 2;
+}
+
+message RemoveVolumeResponse {}
+
+message PruneVolumesRequest {
+  // false: only anonymous volumes; true: also unused named volumes.
+  bool all = 1;
+}
+
+message PruneImagesResponse {
+  PruneResult result = 1;
+}
+
+message PruneNetworksResponse {
+  PruneResult result = 1;
+}
+
+message PruneVolumesResponse {
+  PruneResult result = 1;
+}

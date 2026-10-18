@@ -13,6 +13,9 @@ import { HostDetailPage } from "./pages/HostDetail";
 import { AuditPage } from "./pages/Audit";
 import { ContainersPage } from "./pages/Containers";
 import { ContainerDetailPage } from "./pages/ContainerDetail";
+import { StacksPage } from "./pages/Stacks";
+import { StackDetailPage } from "./pages/StackDetail";
+import { ImagesPage, NetworksPage, VolumesPage } from "./pages/Resources";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,10 +73,25 @@ const containerRoute = createRoute({
   path: "/hosts/$id/containers/$cid",
   component: withMe(ContainerDetailPage),
 });
+const stacksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/stacks", component: withMe(StacksPage) });
+const stackRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/stacks/$name", component: withMe(StackDetailPage) });
+const imagesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/images", component: withMe(ImagesPage) });
+const networksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/networks", component: withMe(NetworksPage) });
+const volumesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/volumes", component: withMe(VolumesPage) });
 const auditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/audit", component: AuditPage });
 
 const router = createRouter({
-  routeTree: rootRoute.addChildren([hostsRoute, hostRoute, containersRoute, containerRoute, auditRoute]),
+  routeTree: rootRoute.addChildren([hostsRoute,
+    hostRoute,
+    containersRoute,
+    containerRoute,
+    stacksRoute,
+    stackRoute,
+    imagesRoute,
+    networksRoute,
+    volumesRoute,
+    auditRoute,
+  ]),
   defaultNotFoundComponent: () => <Outlet />,
 });
 

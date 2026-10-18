@@ -16,6 +16,7 @@ import (
 	"nexos/agent/docker"
 	"nexos/agent/identity"
 	"nexos/agent/metrics"
+	"nexos/agent/stacks"
 	nexosv1 "nexos/internal/gen/nexos/v1"
 	"nexos/internal/pki"
 )
@@ -26,10 +27,11 @@ var Version = "dev"
 type Server struct {
 	id     *identity.Identity
 	docker *docker.Client
+	stacks *stacks.Manager
 }
 
-func New(id *identity.Identity, dc *docker.Client) *Server {
-	return &Server{id: id, docker: dc}
+func New(id *identity.Identity, dc *docker.Client, sm *stacks.Manager) *Server {
+	return &Server{id: id, docker: dc, stacks: sm}
 }
 
 // GRPCServer builds the mTLS gRPC server with all services registered.
@@ -47,6 +49,10 @@ func (s *Server) GRPCServer() *grpc.Server {
 	nexosv1.RegisterCertificateServiceServer(gs, &certificateService{s: s})
 	nexosv1.RegisterContainerServiceServer(gs, &containerService{s: s})
 	nexosv1.RegisterEventServiceServer(gs, &eventService{s: s})
+	nexosv1.RegisterImageServiceServer(gs, &imageService{s: s})
+	nexosv1.RegisterNetworkServiceServer(gs, &networkService{s: s})
+	nexosv1.RegisterVolumeServiceServer(gs, &volumeService{s: s})
+	nexosv1.RegisterStackServiceServer(gs, &stackService{s: s})
 	return gs
 }
 

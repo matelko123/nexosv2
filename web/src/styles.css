@@ -79,15 +79,16 @@
     border-color: var(--color-rule-2);
     pointer-events: none;
   }
+  /* Drawn inside the box so panels with overflow:auto do not scroll. */
   .panel::before {
-    top: -1px;
-    left: -1px;
+    top: 0;
+    left: 0;
     border-top: 1px solid;
     border-left: 1px solid;
   }
   .panel::after {
-    bottom: -1px;
-    right: -1px;
+    bottom: 0;
+    right: 0;
     border-bottom: 1px solid;
     border-right: 1px solid;
   }

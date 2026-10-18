@@ -80,7 +80,7 @@ func startAgent(t *testing.T, bundle string, ln net.Listener) *identity.Identity
 	if err != nil {
 		t.Fatal(err)
 	}
-	gs := server.New(id, nil).GRPCServer()
+	gs := server.New(id, nil, nil).GRPCServer()
 	go gs.Serve(ln)
 	t.Cleanup(gs.Stop)
 	return id

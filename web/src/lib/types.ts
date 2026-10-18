@@ -213,3 +213,90 @@ export interface DockerEvent {
   attributes?: Record<string, string>;
   time_unix_nano?: number;
 }
+
+export interface DockerImage {
+  id: string;
+  repo_tags?: string[];
+  repo_digests?: string[];
+  created_unix?: number;
+  size_bytes?: number;
+  containers?: number;
+  labels?: Record<string, string>;
+}
+
+export interface PullProgress {
+  id?: string;
+  status?: string;
+  current?: number;
+  total?: number;
+  error?: string;
+  done?: boolean;
+}
+
+export interface PruneResult {
+  deleted?: string[];
+  space_reclaimed_bytes?: number;
+}
+
+export interface NetworkEndpoint {
+  container_id?: string;
+  container_name?: string;
+  ipv4?: string;
+  ipv6?: string;
+  mac?: string;
+}
+
+export interface DockerNetwork {
+  id: string;
+  name: string;
+  driver?: string;
+  scope?: string;
+  internal?: boolean;
+  attachable?: boolean;
+  ipv6?: boolean;
+  subnets?: string[];
+  gateways?: string[];
+  created_unix?: number;
+  labels?: Record<string, string>;
+  endpoints?: NetworkEndpoint[];
+  builtin?: boolean;
+  compose_project?: string;
+}
+
+export interface DockerVolume {
+  name: string;
+  driver?: string;
+  mountpoint?: string;
+  scope?: string;
+  created_unix?: number;
+  labels?: Record<string, string>;
+  used_by?: string[];
+  compose_project?: string;
+  anonymous?: boolean;
+}
+
+export type StackStatus = "running" | "partial" | "stopped" | "empty";
+
+export interface Stack {
+  name: string;
+  managed?: boolean;
+  working_dir?: string;
+  config_files?: string[];
+  containers_total?: number;
+  containers_running?: number;
+  status: StackStatus;
+  protected?: boolean;
+  updated_unix?: number;
+}
+
+export interface StackDetail {
+  stack: Stack;
+  files: { path?: string; content?: string; error?: string }[];
+  compose: string;
+  env: string;
+  env_visible: boolean;
+}
+
+export type StackOperation = "up" | "down" | "pull" | "restart" | "stop" | "start";
+
+export type StreamMsg = { line?: string; exit_code?: number; error?: string };

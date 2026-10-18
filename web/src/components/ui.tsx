@@ -151,6 +151,56 @@ export function CopyBox({ value, rows = 3 }: { value: string; rows?: number }) {
   );
 }
 
+/**
+ * Confirmation dialog. With `typeToConfirm`, the user must type that word
+ * first; used for operations that destroy data.
+ */
+export function Confirm({
+  title,
+  children,
+  confirmLabel,
+  danger = false,
+  typeToConfirm,
+  pending = false,
+  error,
+  onConfirm,
+  onClose,
+}: {
+  title: string;
+  children: ReactNode;
+  confirmLabel: string;
+  danger?: boolean;
+  typeToConfirm?: string;
+  pending?: boolean;
+  error?: unknown;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const blocked = !!typeToConfirm && typed !== typeToConfirm;
+  return (
+    <Modal title={title} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="space-y-2 text-sm text-ink-2">{children}</div>
+        {typeToConfirm && (
+          <Field label={`Wpisz "${typeToConfirm}", aby potwierdzić`}>
+            <input className="field readout" value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus />
+          </Field>
+        )}
+        <ErrorText error={error} />
+        <div className="flex justify-end gap-2">
+          <button className="btn" onClick={onClose}>
+            anuluj
+          </button>
+          <button className={`btn ${danger ? "btn-danger" : "btn-primary"}`} disabled={pending || blocked} onClick={onConfirm}>
+            {pending ? "wykonywanie…" : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
   return (
     <div className="min-w-0">

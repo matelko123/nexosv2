@@ -1,4 +1,21 @@
-import type { AuditEntry, Container, ContainerAction, Enrollment, Host, Me, MetricPoint } from "./types";
+import type {
+  AuditEntry,
+  Container,
+  ContainerAction,
+  DockerImage,
+  DockerNetwork,
+  DockerVolume,
+  Enrollment,
+  Host,
+  Me,
+  MetricPoint,
+  PruneResult,
+  PullProgress,
+  Stack,
+  StackDetail,
+  StackOperation,
+  StreamMsg,
+} from "./types";
 
 export class ApiError extends Error {
   status: number;
@@ -61,6 +78,71 @@ export const api = {
       "DELETE",
       `/hosts/${hostId}/containers/${cid}?force=${o.force}&volumes=${o.volumes}&name=${encodeURIComponent(o.name ?? "")}`,
     ),
+};
+
+/**
+ * Calls an endpoint that answers with newline-delimited JSON, invoking
+ * onMsg for each object as it arrives. Errors before the stream starts
+ * reject with ApiError; errors inside the stream arrive as {error} objects.
+ */
+export async function streamRequest<T>(method: string, path: string, body: unknown, onMsg: (m: T) => void): Promise<void> {
+  const headers: Record<string, string> = { "X-CSRF-Token": csrfToken };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const res = await fetch("/api" + path, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+    credentials: "same-origin",
+  });
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, (data as { error?: string }).error ?? res.statusText);
+  }
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += value;
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (line) onMsg(JSON.parse(line) as T);
+    }
+  }
+  if (buf.trim()) onMsg(JSON.parse(buf) as T);
+}
+
+export const resources = {
+  images: (h: string) => request<DockerImage[]>("GET", `/hosts/${h}/images`),
+  pullImage: (h: string, reference: string, on: (m: PullProgress) => void) => streamRequest("POST", `/hosts/${h}/images/pull`, { reference }, on),
+  removeImage: (h: string, id: string, force: boolean, name?: string) =>
+    request<{ deleted?: string[]; untagged?: string[] }>("DELETE", `/hosts/${h}/images/${id}?force=${force}&name=${encodeURIComponent(name ?? "")}`),
+  pruneImages: (h: string, all: boolean) => request<PruneResult>("POST", `/hosts/${h}/images/prune`, { all }),
+
+  networks: (h: string) => request<DockerNetwork[]>("GET", `/hosts/${h}/networks`),
+  createNetwork: (h: string, b: { name: string; driver: string; internal: boolean; attachable: boolean; ipv6: boolean; subnet: string; gateway: string }) =>
+    request<{ id: string; warnings?: string[] }>("POST", `/hosts/${h}/networks`, b),
+  removeNetwork: (h: string, id: string, name?: string) => request<void>("DELETE", `/hosts/${h}/networks/${id}?name=${encodeURIComponent(name ?? "")}`),
+  connectNetwork: (h: string, id: string, container: string, aliases: string[]) =>
+    request<void>("POST", `/hosts/${h}/networks/${id}/connect`, { container, aliases }),
+  disconnectNetwork: (h: string, id: string, container: string) => request<void>("POST", `/hosts/${h}/networks/${id}/disconnect`, { container, force: false }),
+  pruneNetworks: (h: string) => request<PruneResult>("POST", `/hosts/${h}/networks/prune`),
+
+  volumes: (h: string) => request<DockerVolume[]>("GET", `/hosts/${h}/volumes`),
+  createVolume: (h: string, name: string) => request<DockerVolume>("POST", `/hosts/${h}/volumes`, { name }),
+  removeVolume: (h: string, name: string) => request<void>("DELETE", `/hosts/${h}/volumes/${name}`),
+  pruneVolumes: (h: string, all: boolean) => request<PruneResult>("POST", `/hosts/${h}/volumes/prune`, { all }),
+
+  stacks: (h: string) => request<Stack[]>("GET", `/hosts/${h}/stacks`),
+  stack: (h: string, name: string) => request<StackDetail>("GET", `/hosts/${h}/stacks/${name}`),
+  createStack: (h: string, b: { name: string; compose: string; env: string }) => request<Stack>("POST", `/hosts/${h}/stacks`, b),
+  updateStack: (h: string, name: string, b: { compose: string; env: string }) => request<Stack>("PUT", `/hosts/${h}/stacks/${name}`, b),
+  runStack: (h: string, name: string, b: { operation: StackOperation; pull?: boolean; remove_volumes?: boolean }, on: (m: StreamMsg) => void) =>
+    streamRequest("POST", `/hosts/${h}/stacks/${name}/run`, b, on),
+  deleteStack: (h: string, name: string, down: boolean, volumes: boolean, on: (m: StreamMsg) => void) =>
+    streamRequest("DELETE", `/hosts/${h}/stacks/${name}?down=${down}&volumes=${volumes}`, undefined, on),
 };
 
 /** URL of a hub WebSocket endpoint on the current origin. */

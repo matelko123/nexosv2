@@ -248,6 +248,10 @@ export function HostHeader({ host: h, isAdmin }: { host: Host; isAdmin: boolean 
   const tabs = [
     { to: "/hosts/$id", label: "Przegląd" },
     { to: "/hosts/$id/containers", label: "Kontenery", count: h.info?.docker?.containers_total },
+    { to: "/hosts/$id/stacks", label: "Stacki" },
+    { to: "/hosts/$id/images", label: "Obrazy", count: h.info?.docker?.images },
+    { to: "/hosts/$id/networks", label: "Sieci" },
+    { to: "/hosts/$id/volumes", label: "Wolumeny" },
   ] as const;
   return (
     <>
@@ -268,7 +272,7 @@ export function HostHeader({ host: h, isAdmin }: { host: Host; isAdmin: boolean 
       </header>
       {h.error && h.status !== "online" && <ErrorText error={`Ostatni błąd połączenia: ${h.error}`} />}
       {h.status !== "pending" && (
-        <nav className="flex gap-1 border-b border-rule">
+        <nav className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-rule">
           {tabs.map((t) => (
             <Link
               key={t.to}

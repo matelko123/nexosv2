@@ -17,6 +17,7 @@ import (
 	"nexos/agent/docker"
 	"nexos/agent/identity"
 	"nexos/agent/server"
+	"nexos/agent/stacks"
 	"nexos/internal/enroll"
 	"nexos/internal/pki"
 )
@@ -133,7 +134,18 @@ func run() error {
 		slog.Warn("docker client unavailable", "err", err)
 		dc = nil
 	}
-	gs := server.New(id, dc).GRPCServer()
+	var sm *stacks.Manager
+	if dc != nil {
+		stacksDir := os.Getenv("NEXOS_STACKS_DIR")
+		if stacksDir == "" {
+			stacksDir = "/opt/nexos/stacks"
+		}
+		if sm, err = stacks.New(stacksDir, os.Getenv("NEXOS_HOST_ROOT"), dc); err != nil {
+			slog.Warn("stack management disabled", "err", err)
+			sm = nil
+		}
+	}
+	gs := server.New(id, dc, sm).GRPCServer()
 
 	var ln net.Listener
 	// The WireGuard interface may come up after the container; retry binding.

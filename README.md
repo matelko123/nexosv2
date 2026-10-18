@@ -7,14 +7,18 @@ Przeglądarka ──HTTPS──► HUB (serwer A) ──gRPC/mTLS po wg0──�
                                                         └──► AGENT B (10.66.0.2:7443)
 ```
 
-## Stan: Faza 1 (fundament)
+## Stan: Fazy 1–3
 
 - PKI z własnym CA, rejestracja agenta jednorazowym pakietem, automatyczna rotacja certyfikatów (30 dni, odnawiane 10 dni przed końcem), pinning certyfikatów agentów w hubie
 - Logowanie: argon2id + obowiązkowe TOTP (z ochroną przed ponownym użyciem kodu), sesje HttpOnly/SameSite=Strict, CSRF, rate limiting, RBAC, dziennik audytu
 - Metryki hosta na żywo (CPU per rdzeń, RAM/swap, dyski, I/O, ruch per interfejs, temperatury, load) + historia w SQLite (domyślnie 24 h)
 - UI: lista hostów, szczegóły hosta z wykresami, dodawanie hostów, audyt
 
-Kolejne fazy (plan): kontenery (logi, exec, akcje), obrazy/sieci/wolumeny/stacki compose, alerty, funkcje hosta.
+- Kontenery: lista, akcje, logi na żywo, statystyki, terminal (exec), zdarzenia Dockera
+- Obrazy (pull z postępem, usuwanie, prune), sieci (tworzenie, podłączanie kontenerów), wolumeny
+- Stacki compose: edytor compose.yaml i .env z walidacją, up/down/pull/restart z podglądem na żywo; pozostałe projekty compose na hoście są wykrywane automatycznie
+
+Kolejne fazy (plan): historia metryk z downsamplingiem, alerty i powiadomienia, aktualizacje obrazów, funkcje hosta.
 
 ## Model bezpieczeństwa
 
@@ -96,6 +100,7 @@ Po rejestracji usuń `NEXOS_ENROLL` z `.env`. Agent odmówi startu na `0.0.0.0` 
 | `NEXOS_LISTEN` | wymagane | Adres WG agenta, np. `10.66.0.2:7443` |
 | `NEXOS_ENROLL` | | Pakiet rejestracyjny (tylko pierwsze uruchomienie) |
 | `NEXOS_HOSTNAME` | hostname | Nazwa pokazywana w UI |
+| `NEXOS_STACKS_DIR` | `/opt/nexos/stacks` | Katalog stacków zarządzanych przez NexOS (montowany pod tą samą ścieżką co na hoście) |
 
 ## Rozwój
 

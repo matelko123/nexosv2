@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// StackService manages Docker Compose projects.
+//
+// "Managed" stacks live in the agent's stacks directory and can be edited
+// and deployed from NexOS. Other compose projects found on the host
+// ("external") are listed from container labels; they can be started,
+// stopped, restarted and taken down, and their files viewed read-only.
+service StackService {
+  rpc ListStacks(ListStacksRequest) returns (ListStacksResponse);
+  rpc GetStack(GetStackRequest) returns (GetStackResponse);
+  // SaveStack validates (docker compose config) and writes a managed stack.
+  rpc SaveStack(SaveStackRequest) returns (SaveStackResponse);
+  // DeleteStack removes a managed stack's files (after `down` if requested).
+  rpc DeleteStack(DeleteStackRequest) returns (stream DeleteStackResponse);
+  // RunStack runs a compose operation and streams its output.
+  rpc RunStack(RunStackRequest) returns (stream RunStackResponse);
+}
+
+message Stack {
+  string name = 1;
+  bool managed = 2;
+  // Directory on the host and compose files (host paths).
+  string working_dir = 3;
+  repeated string config_files = 4;
+  uint32 containers_total = 5;
+  uint32 containers_running = 6;
+  // running, partial, stopped, empty (no containers yet)
+  string status = 7;
+  // Contains NexOS's own containers: lifecycle actions are refused.
+  bool protected = 8;
+  int64 updated_unix = 9;
+}
+
+message ListStacksRequest {}
+
+message ListStacksResponse {
+  repeated Stack stacks = 1;
+}
+
+message GetStackRequest {
+  string name = 1;
+  // Include the .env file content (may contain secrets).
+  bool include_env = 2;
+}
+
+message StackFile {
+  string path = 1;
+  string content = 2;
+  // Set when the file could not be read (e.g. outside the host root mount).
+  string error = 3;
+}
+
+message GetStackResponse {
+  Stack stack = 1;
+  repeated StackFile files = 2;
+  // Managed stacks only.
+  string compose = 3;
+  string env = 4;
+}
+
+message SaveStackRequest {
+  string name = 1;
+  string compose = 2;
+  string env = 3;
+  // Must be true to create a stack that does not exist yet; prevents
+  // accidental overwrites when two people edit the same name.
+  bool create = 4;
+}
+
+message SaveStackResponse {
+  Stack stack = 1;
+}
+
+message DeleteStackRequest {
+  string name = 1;
+  // Run `docker compose down` first.
+  bool down = 2;
+  bool remove_volumes = 3;
+}
+
+enum StackOperation {
+  STACK_OPERATION_UNSPECIFIED = 0;
+  STACK_OPERATION_UP = 1;
+  STACK_OPERATION_DOWN = 2;
+  STACK_OPERATION_PULL = 3;
+  STACK_OPERATION_RESTART = 4;
+  STACK_OPERATION_STOP = 5;
+  STACK_OPERATION_START = 6;
+}
+
+message RunStackRequest {
+  string name = 1;
+  StackOperation operation = 2;
+  // up: pull images before starting (--pull always).
+  bool pull = 3;
+  // down: also remove named volumes (-v).
+  bool remove_volumes = 4;
+}
+
+message StackOutput {
+  oneof msg {
+    string line = 1;
+    // Sent once at the end.
+    int32 exit_code = 2;
+  }
+}
+
+message DeleteStackResponse {
+  StackOutput output = 1;
+}
+
+message RunStackResponse {
+  StackOutput output = 1;
+}

@@ -16,6 +16,9 @@ services:
     network_mode: host
     read_only: true
     cap_drop: [ALL]
+    # Read-only bypass of file permissions, to show compose files of projects
+    # kept in private directories (e.g. /home/user with mode 750).
+    cap_add: [DAC_READ_SEARCH]
     security_opt: ["no-new-privileges:true"]
     environment:
       NEXOS_LISTEN: ${NEXOS_LISTEN:?set NEXOS_LISTEN, e.g. 10.66.0.2:7443}
@@ -25,6 +28,9 @@ services:
       HOST_SYS: /host/sys
       HOST_ETC: /host/root/etc
       NEXOS_HOST_ROOT: /host/root
+      # Managed compose stacks. Must be mounted at the same path as on the
+      # host so relative bind mounts in compose files resolve correctly.
+      NEXOS_STACKS_DIR: /opt/nexos/stacks
     volumes:
       - nexos-agent-data:/data
       # Full Docker control: the agent is root-equivalent on this host, which

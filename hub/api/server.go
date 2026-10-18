@@ -96,16 +96,42 @@ func (s *Server) Handler() http.Handler {
 			r.Get("/hosts/{id}/containers/stats", s.handleContainerStats)
 			r.Get("/hosts/{id}/containers/{cid}/logs", s.handleContainerLogs)
 
+			r.Get("/hosts/{id}/images", s.handleListImages)
+			r.Get("/hosts/{id}/images/{iid}/inspect", s.handleInspectImage)
+			r.Get("/hosts/{id}/networks", s.handleListNetworks)
+			r.Get("/hosts/{id}/networks/{nid}/inspect", s.handleInspectNetwork)
+			r.Get("/hosts/{id}/volumes", s.handleListVolumes)
+			r.Get("/hosts/{id}/volumes/{vname}/inspect", s.handleInspectVolume)
+			r.Get("/hosts/{id}/stacks", s.handleListStacks)
+
 			r.Group(func(r chi.Router) {
 				r.Use(requireRole("operator"))
 				r.Get("/hosts/{id}/containers/{cid}/inspect", s.handleInspectContainer)
 				r.Post("/hosts/{id}/containers/{cid}/actions/{action}", s.handleContainerAction)
 				r.Delete("/hosts/{id}/containers/{cid}", s.handleRemoveContainer)
+				r.Post("/hosts/{id}/images/pull", s.handlePullImage)
+				r.Post("/hosts/{id}/networks/{nid}/connect", s.handleNetworkMembership(true))
+				r.Post("/hosts/{id}/networks/{nid}/disconnect", s.handleNetworkMembership(false))
+				r.Get("/hosts/{id}/stacks/{sname}", s.handleGetStack)
+				r.Post("/hosts/{id}/stacks/{sname}/run", s.handleRunStack)
 			})
 
+			// Anything that deletes data or can grant host access (a compose
+			// file can mount / or run privileged containers) is admin only.
 			r.Group(func(r chi.Router) {
 				r.Use(requireRole("admin"))
 				r.Get("/hosts/{id}/containers/{cid}/exec", s.handleContainerExec)
+				r.Delete("/hosts/{id}/images/{iid}", s.handleRemoveImage)
+				r.Post("/hosts/{id}/images/prune", s.handlePruneImages)
+				r.Post("/hosts/{id}/networks", s.handleCreateNetwork)
+				r.Delete("/hosts/{id}/networks/{nid}", s.handleRemoveNetwork)
+				r.Post("/hosts/{id}/networks/prune", s.handlePruneNetworks)
+				r.Post("/hosts/{id}/volumes", s.handleCreateVolume)
+				r.Delete("/hosts/{id}/volumes/{vname}", s.handleRemoveVolume)
+				r.Post("/hosts/{id}/volumes/prune", s.handlePruneVolumes)
+				r.Post("/hosts/{id}/stacks", s.handleCreateStack)
+				r.Put("/hosts/{id}/stacks/{sname}", s.handleUpdateStack)
+				r.Delete("/hosts/{id}/stacks/{sname}", s.handleDeleteStack)
 			})
 
 			r.Group(func(r chi.Router) {

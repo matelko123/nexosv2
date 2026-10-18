@@ -103,7 +103,24 @@ export function useLiveEvents(qc: QueryClient, enabled: boolean) {
             break;
           case "docker.event":
             // Bursts (compose up, prune) arrive as many events: refetch once.
-            if (ev.data.type === "container") scheduleRefetch(qc, ["containers", ev.host_id]);
+            switch (ev.data.type) {
+              case "container":
+                scheduleRefetch(qc, ["containers", ev.host_id]);
+                scheduleRefetch(qc, ["stacks", ev.host_id]);
+                // Image/volume/network usage counts depend on containers.
+                scheduleRefetch(qc, ["images", ev.host_id]);
+                scheduleRefetch(qc, ["volumes", ev.host_id]);
+                break;
+              case "image":
+                scheduleRefetch(qc, ["images", ev.host_id]);
+                break;
+              case "network":
+                scheduleRefetch(qc, ["networks", ev.host_id]);
+                break;
+              case "volume":
+                scheduleRefetch(qc, ["volumes", ev.host_id]);
+                break;
+            }
             break;
         }
       };

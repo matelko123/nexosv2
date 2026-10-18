@@ -51,7 +51,7 @@ func writeGRPCError(w http.ResponseWriter, err error) {
 		code = http.StatusNotFound
 	case codes.InvalidArgument:
 		code = http.StatusBadRequest
-	case codes.FailedPrecondition:
+	case codes.FailedPrecondition, codes.AlreadyExists:
 		code = http.StatusConflict
 	case codes.Unavailable:
 		code = http.StatusServiceUnavailable

@@ -3,6 +3,7 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/moby/moby/client"
@@ -50,3 +51,5 @@ func (c *Client) Info(ctx context.Context) *nexosv1.DockerInfo {
 	}
 	return out
 }
+
+func encodeJSON(v any) ([]byte, error) { return json.Marshal(v) }
