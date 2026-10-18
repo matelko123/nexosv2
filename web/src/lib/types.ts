@@ -42,6 +42,7 @@ export interface HostInfo {
   memory_total_bytes?: number;
   agent_version?: string;
   docker?: DockerInfo;
+  host_features?: string[];
 }
 
 export interface DiskUsage {
@@ -378,4 +379,94 @@ export interface ContainerPoint {
   mem_limit: number;
   net_rx: number;
   net_tx: number;
+}
+
+export interface HostProcess {
+  pid: number;
+  ppid?: number;
+  name?: string;
+  user?: string;
+  command?: string;
+  cpu_percent?: number;
+  memory_rss_bytes?: number;
+  memory_percent?: number;
+  status?: string;
+  started_unix?: number;
+  threads?: number;
+  container_id?: string;
+}
+
+export interface SystemdUnit {
+  name: string;
+  description?: string;
+  load_state?: string;
+  active_state?: string;
+  sub_state?: string;
+  unit_file_state?: string;
+  protected?: boolean;
+}
+
+export interface PackageUpdate {
+  name: string;
+  current_version?: string;
+  new_version?: string;
+  source?: string;
+  security?: boolean;
+}
+
+export interface PackageReport {
+  updates: PackageUpdate[];
+  lists_updated_unix?: number;
+  reboot_required?: boolean;
+  reboot_packages: string[];
+  distribution?: string;
+}
+
+export interface UserSummary {
+  id: number;
+  username: string;
+  role: Role;
+  created_at: string;
+  last_login_at?: string;
+  pending: boolean;
+  sessions: number;
+  passkeys: number;
+}
+
+export interface SessionInfo {
+  id: string;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string;
+  ip: string;
+  user_agent: string;
+  current?: boolean;
+}
+
+export interface PasskeyInfo {
+  id: string;
+  name: string;
+  created_at: string;
+  last_used_at?: string;
+}
+
+export interface Account {
+  user: User;
+  sessions: SessionInfo[];
+  passkeys: PasskeyInfo[];
+  passkeys_available: boolean;
+  passkeys_unavailable_reason?: string;
+}
+
+export interface TotpSetup {
+  setup_id: string;
+  totp_secret: string;
+  totp_uri: string;
+  qr_png: string;
+}
+
+export interface PasskeyChallenge {
+  passkey_required: true;
+  login_id: string;
+  options: { publicKey: unknown };
 }

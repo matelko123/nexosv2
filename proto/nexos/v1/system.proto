@@ -31,6 +31,8 @@ message HostInfo {
   uint64 memory_total_bytes = 12;
   string agent_version = 13;
   DockerInfo docker = 14;
+  // Opt-in host features enabled on this agent: processes, systemd, packages.
+  repeated string host_features = 15;
 }
 
 message DockerInfo {

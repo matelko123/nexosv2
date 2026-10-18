@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// HostService exposes opt-in host management features. Each feature must be
+// enabled on the agent (NEXOS_HOST_FEATURES) and needs extra container
+// privileges; disabled features return FAILED_PRECONDITION.
+service HostService {
+  rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);
+  rpc SignalProcess(SignalProcessRequest) returns (SignalProcessResponse);
+  rpc ListUnits(ListUnitsRequest) returns (ListUnitsResponse);
+  rpc UnitAction(UnitActionRequest) returns (UnitActionResponse);
+  rpc StreamJournal(StreamJournalRequest) returns (stream StreamJournalResponse);
+  rpc ListPackageUpdates(ListPackageUpdatesRequest) returns (ListPackageUpdatesResponse);
+}
+
+message Process {
+  int32 pid = 1;
+  int32 ppid = 2;
+  string name = 3;
+  string user = 4;
+  string command = 5;
+  // Percent of one CPU core, like top.
+  double cpu_percent = 6;
+  uint64 memory_rss_bytes = 7;
+  double memory_percent = 8;
+  string status = 9;
+  int64 started_unix = 10;
+  int32 threads = 11;
+  // Container the process belongs to, if any.
+  string container_id = 12;
+}
+
+message ListProcessesRequest {}
+
+message ListProcessesResponse {
+  repeated Process processes = 1;
+  uint32 cpu_cores = 2;
+  uint64 memory_total_bytes = 3;
+}
+
+enum ProcessSignal {
+  PROCESS_SIGNAL_UNSPECIFIED = 0;
+  PROCESS_SIGNAL_TERM = 1;
+  PROCESS_SIGNAL_KILL = 2;
+}
+
+message SignalProcessRequest {
+  int32 pid = 1;
+  ProcessSignal signal = 2;
+  // Guards against PID reuse: must match the process start time.
+  int64 started_unix = 3;
+}
+
+message SignalProcessResponse {}
+
+message Unit {
+  string name = 1;
+  string description = 2;
+  // loaded, not-found, masked...
+  string load_state = 3;
+  // active, inactive, failed, activating...
+  string active_state = 4;
+  // running, exited, dead...
+  string sub_state = 5;
+  // enabled, disabled, static...
+  string unit_file_state = 6;
+  // Critical units (docker, ssh, dbus...) cannot be stopped from the UI.
+  bool protected = 7;
+}
+
+message ListUnitsRequest {}
+
+message ListUnitsResponse {
+  repeated Unit units = 1;
+}
+
+enum UnitActionType {
+  UNIT_ACTION_TYPE_UNSPECIFIED = 0;
+  UNIT_ACTION_TYPE_START = 1;
+  UNIT_ACTION_TYPE_STOP = 2;
+  UNIT_ACTION_TYPE_RESTART = 3;
+  UNIT_ACTION_TYPE_RELOAD = 4;
+}
+
+message UnitActionRequest {
+  string name = 1;
+  UnitActionType action = 2;
+}
+
+message UnitActionResponse {
+  // systemd job result: done, failed, timeout...
+  string result = 1;
+}
+
+message StreamJournalRequest {
+  string unit = 1;
+  uint32 lines = 2;
+  bool follow = 3;
+}
+
+message StreamJournalResponse {
+  repeated string lines = 1;
+}
+
+message PackageUpdate {
+  string name = 1;
+  string current_version = 2;
+  string new_version = 3;
+  // e.g. noble-updates, noble-security
+  string source = 4;
+  bool security = 5;
+}
+
+message ListPackageUpdatesRequest {}
+
+message ListPackageUpdatesResponse {
+  repeated PackageUpdate updates = 1;
+  // When the host last refreshed its package lists (apt update).
+  int64 lists_updated_unix = 2;
+  bool reboot_required = 3;
+  repeated string reboot_packages = 4;
+  string distribution = 5;
+}

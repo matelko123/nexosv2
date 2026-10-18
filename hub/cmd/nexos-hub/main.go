@@ -151,6 +151,7 @@ func run() error {
 		SecureCookies:   os.Getenv("NEXOS_INSECURE_COOKIES") != "true",
 		HSTS:            uiTLS == "auto",
 		TrustedProxies:  trusted,
+		WebAuthnOrigins: splitList(os.Getenv("NEXOS_WEBAUTHN_ORIGINS")),
 		Static:          web.Dist(),
 	}, st, mgr, bus, sealer, engine, checker)
 	go apiSrv.Maintenance(ctx)

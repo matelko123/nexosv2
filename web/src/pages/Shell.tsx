@@ -10,6 +10,7 @@ const nav = [
   { to: "/", label: "Hosty", code: "01" },
   { to: "/alerts", label: "Alerty", code: "02" },
   { to: "/audit", label: "Audyt", code: "03", admin: true },
+  { to: "/users", label: "Użytkownicy", code: "04", admin: true },
 ] as const;
 
 export function Shell({ me }: { me: Me }) {
@@ -67,7 +68,9 @@ export function Shell({ me }: { me: Me }) {
           </div>
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-sm">{me.user.username}</div>
+              <Link to="/account" className="block truncate text-sm hover:text-amber">
+                {me.user.username}
+              </Link>
               <div className="label">{me.user.role}</div>
             </div>
             <button className="btn !px-2.5 !py-1" onClick={() => logout.mutate()}>

@@ -252,6 +252,7 @@ export function HostHeader({ host: h, isAdmin }: { host: Host; isAdmin: boolean 
     { to: "/hosts/$id/images", label: "Obrazy", count: h.info?.docker?.images },
     { to: "/hosts/$id/networks", label: "Sieci" },
     { to: "/hosts/$id/volumes", label: "Wolumeny" },
+    ...(h.info?.host_features?.length ? [{ to: "/hosts/$id/system", label: "System" } as const] : []),
   ] as const;
   return (
     <>

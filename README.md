@@ -7,7 +7,7 @@ Przeglądarka ──HTTPS──► HUB (serwer A) ──gRPC/mTLS po wg0──�
                                                         └──► AGENT B (10.66.0.2:7443)
 ```
 
-## Stan: Fazy 1–4
+## Stan: Fazy 1–5
 
 - PKI z własnym CA, rejestracja agenta jednorazowym pakietem, automatyczna rotacja certyfikatów (30 dni, odnawiane 10 dni przed końcem), pinning certyfikatów agentów w hubie
 - Logowanie: argon2id + obowiązkowe TOTP (z ochroną przed ponownym użyciem kodu), sesje HttpOnly/SameSite=Strict, CSRF, rate limiting, RBAC, dziennik audytu
@@ -20,7 +20,8 @@ Przeglądarka ──HTTPS──► HUB (serwer A) ──gRPC/mTLS po wg0──�
 
 - Obserwowalność: historia metryk hosta do 90 dni (5 s → 1 min → 5 min), historia zasobów kontenerów, alerty (host offline, CPU, RAM, dysk, temperatura, problemy kontenerów, aktualizacje obrazów) z powiadomieniami ntfy / Discord / Telegram / webhook (HMAC) / e-mail, wykrywanie nowych wersji obrazów w rejestrze
 
-Kolejne fazy (plan): funkcje hosta (systemd, aktualizacje pakietów, procesy), WebAuthn, wielu użytkowników i RBAC per host, backup wolumenów.
+- Funkcje hosta (opt-in per agent): procesy z kill, usługi systemd z dziennikiem journald, podgląd aktualizacji pakietów apt i wymaganego restartu
+- Użytkownicy: zaproszenia jednorazowym linkiem, role viewer/operator/admin, reset dostępu, zmiana hasła, sesje, passkeys (WebAuthn) jako alternatywa dla TOTP
 
 ## Model bezpieczeństwa
 
@@ -102,11 +103,13 @@ Po rejestracji usuń `NEXOS_ENROLL` z `.env`. Agent odmówi startu na `0.0.0.0` 
 | `NEXOS_UPDATE_CHECK_INTERVAL` | `6h` | Co ile sprawdzać nowe wersje obrazów (`0` wyłącza) |
 | `NEXOS_TRUSTED_PROXIES` | | CIDR-y proxy, którym ufamy w `X-Forwarded-For` |
 | `NEXOS_SETUP_TOKEN` | losowy | Token pierwszej konfiguracji |
+| `NEXOS_WEBAUTHN_ORIGINS` | | Dodatkowe originy dla passkeys (np. serwer deweloperski) |
 | **Agent** | | |
 | `NEXOS_LISTEN` | wymagane | Adres WG agenta, np. `10.66.0.2:7443` |
 | `NEXOS_ENROLL` | | Pakiet rejestracyjny (tylko pierwsze uruchomienie) |
 | `NEXOS_HOSTNAME` | hostname | Nazwa pokazywana w UI |
 | `NEXOS_STACKS_DIR` | `/opt/nexos/stacks` | Katalog stacków zarządzanych przez NexOS (montowany pod tą samą ścieżką co na hoście) |
+| `NEXOS_HOST_FEATURES` | | Funkcje hosta: `processes,systemd,packages` (patrz `deploy/agent/compose.host-features.yaml`) |
 
 ## Rozwój
 

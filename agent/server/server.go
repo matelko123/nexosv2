@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"nexos/agent/docker"
+	"nexos/agent/host"
 	"nexos/agent/identity"
 	"nexos/agent/metrics"
 	"nexos/agent/stacks"
@@ -28,10 +29,11 @@ type Server struct {
 	id     *identity.Identity
 	docker *docker.Client
 	stacks *stacks.Manager
+	host   *host.Host
 }
 
-func New(id *identity.Identity, dc *docker.Client, sm *stacks.Manager) *Server {
-	return &Server{id: id, docker: dc, stacks: sm}
+func New(id *identity.Identity, dc *docker.Client, sm *stacks.Manager, h *host.Host) *Server {
+	return &Server{id: id, docker: dc, stacks: sm, host: h}
 }
 
 // GRPCServer builds the mTLS gRPC server with all services registered.
@@ -53,6 +55,7 @@ func (s *Server) GRPCServer() *grpc.Server {
 	nexosv1.RegisterNetworkServiceServer(gs, &networkService{s: s})
 	nexosv1.RegisterVolumeServiceServer(gs, &volumeService{s: s})
 	nexosv1.RegisterStackServiceServer(gs, &stackService{s: s})
+	nexosv1.RegisterHostServiceServer(gs, &hostService{s: s})
 	return gs
 }
 
@@ -92,6 +95,7 @@ type systemService struct {
 func (x *systemService) GetInfo(ctx context.Context, _ *nexosv1.GetInfoRequest) (*nexosv1.GetInfoResponse, error) {
 	info := metrics.HostInfo(ctx)
 	info.AgentVersion = Version
+	info.HostFeatures = x.s.host.Features()
 	if x.s.docker != nil {
 		info.Docker = x.s.docker.Info(ctx)
 	} else {

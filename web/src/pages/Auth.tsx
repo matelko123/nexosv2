@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, loginWithPasskey, passkeysSupported, usersApi } from "../lib/api";
 import { ErrorText, Field } from "../components/ui";
 
 function Frame({ step, title, children }: { step: string; title: string; children: ReactNode }) {
@@ -46,7 +46,11 @@ export function LoginPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState({ username: "", password: "", code: "" });
   const login = useMutation({
-    mutationFn: api.login,
+    // Without a code, accounts with passkeys answer with a WebAuthn challenge.
+    mutationFn: async (b: typeof form) => {
+      const r = await api.login(b);
+      return "passkey_required" in r ? loginWithPasskey(r.login_id, r.options) : r;
+    },
     onSuccess: (me) => qc.setQueryData(["me"], me),
   });
   const submit = (e: FormEvent) => {
@@ -62,8 +66,11 @@ export function LoginPage() {
         <Field label="Hasło">
           <input className="field" type="password" autoComplete="current-password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </Field>
-        <Field label="Kod z aplikacji uwierzytelniającej">
-          <input {...codeInput} required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.replace(/\D/g, "") })} />
+        <Field
+          label="Kod z aplikacji uwierzytelniającej"
+          hint={passkeysSupported() ? "Masz passkey? Zostaw puste i kliknij „Zaloguj” — przeglądarka poprosi o klucz." : undefined}
+        >
+          <input {...codeInput} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.replace(/\D/g, "") })} />
         </Field>
         <ErrorText error={login.error} />
         <button className="btn btn-primary w-full" disabled={login.isPending}>
@@ -142,6 +149,90 @@ export function SetupPage() {
         </Field>
         <Field label="Hasło" hint="Minimum 12 znaków. Najlepiej fraza z kilku słów.">
           <input className="field" type="password" autoComplete="new-password" required minLength={12} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        </Field>
+        <Field label="Powtórz hasło">
+          <input className="field" type="password" autoComplete="new-password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
+        </Field>
+        {mismatch && <ErrorText error="Hasła nie są identyczne" />}
+        <ErrorText error={begin.error} />
+        <button className="btn btn-primary w-full" disabled={begin.isPending || mismatch}>
+          Dalej
+        </button>
+      </form>
+    </Frame>
+  );
+}
+
+/** Accepting an invitation: the invited person sets password and TOTP. */
+export function InvitePage({ token, onDone }: { token: string; onDone: () => void }) {
+  const qc = useQueryClient();
+  const info = useQuery({ queryKey: ["invite", token], queryFn: () => usersApi.inviteInfo(token), retry: false });
+  const [form, setForm] = useState({ password: "", confirm: "" });
+  const [code, setCode] = useState("");
+  const begin = useMutation({ mutationFn: () => usersApi.inviteBegin(token, form.password) });
+  const complete = useMutation({
+    mutationFn: (setupId: string) => usersApi.inviteComplete(setupId, code),
+    onSuccess: (me) => {
+      qc.setQueryData(["me"], me);
+      onDone();
+    },
+  });
+
+  if (info.error) {
+    return (
+      <Frame step="INVITE" title="Zaproszenie nieważne">
+        <p className="text-sm text-ink-2">Link wygasł albo został już użyty. Poproś administratora o nowe zaproszenie.</p>
+      </Frame>
+    );
+  }
+  if (!info.data) return <div className="label grid min-h-screen place-items-center">sprawdzanie zaproszenia…</div>;
+
+  if (begin.data) {
+    const s = begin.data;
+    return (
+      <Frame step="INVITE / 02" title="Skonfiguruj drugi składnik">
+        <p className="text-sm text-ink-2">Zeskanuj kod w aplikacji uwierzytelniającej i wpisz wygenerowany kod.</p>
+        <div className="flex justify-center">
+          <img src={s.qr_png} alt="Kod QR TOTP" className="size-48 border-8 border-white bg-white [image-rendering:pixelated]" />
+        </div>
+        <Field label="Sekret (wpis ręczny)">
+          <input readOnly className="field readout text-xs text-amber" value={s.totp_secret} onFocus={(e) => e.currentTarget.select()} />
+        </Field>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            complete.mutate(s.setup_id);
+          }}
+        >
+          <Field label="Kod weryfikacyjny">
+            <input {...codeInput} required autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+          </Field>
+          <ErrorText error={complete.error} />
+          <button className="btn btn-primary w-full" disabled={complete.isPending}>
+            Aktywuj konto
+          </button>
+        </form>
+      </Frame>
+    );
+  }
+
+  const mismatch = form.confirm !== "" && form.confirm !== form.password;
+  return (
+    <Frame step="INVITE / 01" title={`Witaj, ${info.data.username}`}>
+      <p className="text-sm text-ink-2">
+        Zostałeś zaproszony z rolą <strong className="text-ink">{info.data.role}</strong>. Ustaw hasło, a w następnym kroku aplikację uwierzytelniającą.
+      </p>
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!mismatch) begin.mutate();
+        }}
+      >
+        <input type="text" autoComplete="username" value={info.data.username} readOnly hidden />
+        <Field label="Hasło" hint="Minimum 12 znaków.">
+          <input className="field" type="password" autoComplete="new-password" required minLength={12} autoFocus value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </Field>
         <Field label="Powtórz hasło">
           <input className="field" type="password" autoComplete="new-password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />

@@ -7,6 +7,14 @@ import type {
   ChannelType,
   Container,
   ContainerPoint,
+  HostProcess,
+  PackageReport,
+  Role,
+  SystemdUnit,
+  TotpSetup,
+  UserSummary,
+  Account,
+  PasskeyChallenge,
   ContainerAction,
   DockerImage,
   DockerNetwork,
@@ -61,8 +69,9 @@ export const api = {
   setupBegin: (b: { setup_token: string; username: string; password: string }) =>
     request<{ setup_id: string; totp_secret: string; totp_uri: string; qr_png: string }>("POST", "/setup/begin", b),
   setupComplete: (b: { setup_id: string; code: string }) => request<Me>("POST", "/setup/complete", b).then(withCsrf),
+  /** Without a code, users with passkeys get a passkey challenge instead of a session. */
   login: (b: { username: string; password: string; code: string }) =>
-    request<Me>("POST", "/auth/login", b).then(withCsrf),
+    request<Me | PasskeyChallenge>("POST", "/auth/login", b).then((r) => ("passkey_required" in r ? r : withCsrf(r))),
   me: () => request<Me>("GET", "/auth/me").then(withCsrf),
   logout: () => request<void>("POST", "/auth/logout"),
 
@@ -178,4 +187,73 @@ export function wsUrl(path: string, params?: Record<string, string | number | bo
   for (const [k, v] of Object.entries(params ?? {})) if (v !== undefined && v !== "") q.set(k, String(v));
   const qs = q.toString();
   return `${proto}//${location.host}/api${path}${qs ? "?" + qs : ""}`;
+}
+
+export const hostApi = {
+  processes: (h: string) => request<{ processes: HostProcess[]; cpu_cores: number; memory_total_bytes: number }>("GET", `/hosts/${h}/processes`),
+  signal: (h: string, p: HostProcess, signal: "term" | "kill") =>
+    request<void>("POST", `/hosts/${h}/processes/${p.pid}/signal`, { signal, started_unix: p.started_unix ?? 0, name: p.name }),
+  units: (h: string) => request<SystemdUnit[]>("GET", `/hosts/${h}/units`),
+  unitAction: (h: string, unit: string, action: "start" | "stop" | "restart" | "reload") =>
+    request<{ result: string }>("POST", `/hosts/${h}/units/${encodeURIComponent(unit)}/${action}`),
+  packages: (h: string) => request<PackageReport>("GET", `/hosts/${h}/packages`),
+};
+
+export const usersApi = {
+  list: () => request<UserSummary[]>("GET", "/users"),
+  create: (username: string, role: Role) => request<{ id: number; invite_token: string; expires_at: string }>("POST", "/users", { username, role }),
+  setRole: (id: number, role: Role) => request<void>("PATCH", `/users/${id}`, { role }),
+  remove: (id: number) => request<void>("DELETE", `/users/${id}`),
+  reset: (id: number) => request<{ invite_token: string; expires_at: string }>("POST", `/users/${id}/reset`),
+  revokeSessions: (id: number) => request<void>("DELETE", `/users/${id}/sessions`),
+
+  inviteInfo: (token: string) => request<{ username: string; role: Role }>("GET", `/invite/${encodeURIComponent(token)}`),
+  inviteBegin: (token: string, password: string) => request<TotpSetup>("POST", "/invite/begin", { token, password }),
+  inviteComplete: (setup_id: string, code: string) => request<Me>("POST", "/invite/complete", { setup_id, code }).then(withCsrf),
+
+  account: () => request<Account>("GET", "/account"),
+  changePassword: (current_password: string, new_password: string, code: string) =>
+    request<void>("POST", "/account/password", { current_password, new_password, code }),
+  revokeSession: (id: string) => request<void>("DELETE", `/account/sessions/${id}`),
+  revokeOtherSessions: () => request<void>("POST", "/account/sessions/revoke-others"),
+  deletePasskey: (id: string) => request<void>("DELETE", `/account/passkeys/${id}`),
+};
+
+// WebAuthn JSON helpers (WebAuthn Level 3 browser API).
+type PKC = typeof PublicKeyCredential & {
+  parseCreationOptionsFromJSON(o: unknown): PublicKeyCredentialCreationOptions;
+  parseRequestOptionsFromJSON(o: unknown): PublicKeyCredentialRequestOptions;
+};
+
+export function passkeysSupported(): boolean {
+  return typeof PublicKeyCredential !== "undefined" && "parseCreationOptionsFromJSON" in PublicKeyCredential;
+}
+
+async function postRaw(path: string, body: unknown) {
+  const res = await fetch("/api" + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    body: JSON.stringify(body),
+    credentials: "same-origin",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, (data as { error?: string }).error ?? res.statusText);
+  return data;
+}
+
+/** Registers a new passkey for the signed-in user. */
+export async function registerPasskey(name: string) {
+  const options = await request<{ publicKey: unknown }>("POST", "/account/passkeys/begin");
+  const publicKey = (PublicKeyCredential as PKC).parseCreationOptionsFromJSON(options.publicKey);
+  const cred = (await navigator.credentials.create({ publicKey })) as PublicKeyCredential | null;
+  if (!cred) throw new Error("Anulowano");
+  await postRaw(`/account/passkeys/finish?name=${encodeURIComponent(name)}`, cred.toJSON());
+}
+
+/** Completes a login with a passkey after the password step. */
+export async function loginWithPasskey(loginId: string, options: { publicKey: unknown }): Promise<Me> {
+  const publicKey = (PublicKeyCredential as PKC).parseRequestOptionsFromJSON(options.publicKey);
+  const cred = (await navigator.credentials.get({ publicKey })) as PublicKeyCredential | null;
+  if (!cred) throw new Error("Anulowano");
+  return withCsrf((await postRaw(`/auth/passkey?login_id=${encodeURIComponent(loginId)}`, cred.toJSON())) as Me);
 }

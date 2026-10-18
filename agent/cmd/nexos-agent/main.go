@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"nexos/agent/docker"
+	"nexos/agent/host"
 	"nexos/agent/identity"
 	"nexos/agent/server"
 	"nexos/agent/stacks"
@@ -145,7 +146,11 @@ func run() error {
 			sm = nil
 		}
 	}
-	gs := server.New(id, dc, sm).GRPCServer()
+	hf := host.New(os.Getenv("NEXOS_HOST_FEATURES"), os.Getenv("NEXOS_HOST_ROOT"))
+	if fs := hf.Features(); len(fs) > 0 {
+		slog.Info("host features enabled", "features", fs)
+	}
+	gs := server.New(id, dc, sm, hf).GRPCServer()
 
 	var ln net.Listener
 	// The WireGuard interface may come up after the container; retry binding.

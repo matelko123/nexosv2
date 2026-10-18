@@ -117,8 +117,10 @@ type HostInfo struct {
 	MemoryTotalBytes uint64                 `protobuf:"varint,12,opt,name=memory_total_bytes,json=memoryTotalBytes,proto3" json:"memory_total_bytes,omitempty"`
 	AgentVersion     string                 `protobuf:"bytes,13,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
 	Docker           *DockerInfo            `protobuf:"bytes,14,opt,name=docker,proto3" json:"docker,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Opt-in host features enabled on this agent: processes, systemd, packages.
+	HostFeatures  []string `protobuf:"bytes,15,rep,name=host_features,json=hostFeatures,proto3" json:"host_features,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HostInfo) Reset() {
@@ -245,6 +247,13 @@ func (x *HostInfo) GetAgentVersion() string {
 func (x *HostInfo) GetDocker() *DockerInfo {
 	if x != nil {
 		return x.Docker
+	}
+	return nil
+}
+
+func (x *HostInfo) GetHostFeatures() []string {
+	if x != nil {
+		return x.HostFeatures
 	}
 	return nil
 }
@@ -894,7 +903,7 @@ const file_nexos_v1_system_proto_rawDesc = "" +
 	"\x15nexos/v1/system.proto\x12\bnexos.v1\"\x10\n" +
 	"\x0eGetInfoRequest\"9\n" +
 	"\x0fGetInfoResponse\x12&\n" +
-	"\x04info\x18\x01 \x01(\v2\x12.nexos.v1.HostInfoR\x04info\"\xfd\x03\n" +
+	"\x04info\x18\x01 \x01(\v2\x12.nexos.v1.HostInfoR\x04info\"\xa2\x04\n" +
 	"\bHostInfo\x12\x1a\n" +
 	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x0e\n" +
 	"\x02os\x18\x02 \x01(\tR\x02os\x12\x1a\n" +
@@ -910,7 +919,8 @@ const file_nexos_v1_system_proto_rawDesc = "" +
 	"\x11cpu_cores_logical\x18\v \x01(\rR\x0fcpuCoresLogical\x12,\n" +
 	"\x12memory_total_bytes\x18\f \x01(\x04R\x10memoryTotalBytes\x12#\n" +
 	"\ragent_version\x18\r \x01(\tR\fagentVersion\x12,\n" +
-	"\x06docker\x18\x0e \x01(\v2\x14.nexos.v1.DockerInfoR\x06docker\"\xfd\x02\n" +
+	"\x06docker\x18\x0e \x01(\v2\x14.nexos.v1.DockerInfoR\x06docker\x12#\n" +
+	"\rhost_features\x18\x0f \x03(\tR\fhostFeatures\"\xfd\x02\n" +
 	"\n" +
 	"DockerInfo\x12\x1c\n" +
 	"\tavailable\x18\x01 \x01(\bR\tavailable\x12\x14\n" +

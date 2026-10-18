@@ -46,6 +46,8 @@ type Config struct {
 	HSTS bool
 	// TrustedProxies are networks whose X-Forwarded-For is honoured.
 	TrustedProxies []*net.IPNet
+	// WebAuthnOrigins are extra allowed origins for passkeys (e.g. a dev server).
+	WebAuthnOrigins []string
 	// Static is the built web UI.
 	Static fs.FS
 }
@@ -64,6 +66,8 @@ type Server struct {
 
 	setupMu sync.Mutex
 	setups  map[string]*pendingSetup
+
+	webauthn waSessions
 }
 
 func New(cfg Config, st *store.Store, mgr *agents.Manager, bus *events.Bus, sealer *auth.Sealer, eng *alerts.Engine, chk *updates.Checker) *Server {
@@ -86,12 +90,23 @@ func (s *Server) Handler() http.Handler {
 		r.Post("/setup/begin", s.handleSetupBegin)
 		r.Post("/setup/complete", s.handleSetupComplete)
 		r.Post("/auth/login", s.handleLogin)
+		r.Post("/auth/passkey", s.handlePasskeyLogin)
+		r.Get("/invite/{token}", s.handleInviteInfo)
+		r.Post("/invite/begin", s.handleInviteBegin)
+		r.Post("/invite/complete", s.handleInviteComplete)
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireSession)
 			r.Get("/auth/me", s.handleMe)
 			r.Post("/auth/logout", s.handleLogout)
 			r.Get("/ws", s.handleWS)
+			r.Get("/account", s.handleAccount)
+			r.Post("/account/password", s.handleChangePassword)
+			r.Delete("/account/sessions/{sid}", s.handleRevokeSession)
+			r.Post("/account/sessions/revoke-others", s.handleRevokeOtherSessions)
+			r.Post("/account/passkeys/begin", s.handlePasskeyBegin)
+			r.Post("/account/passkeys/finish", s.handlePasskeyFinish)
+			r.Delete("/account/passkeys/{kid}", s.handlePasskeyDelete)
 
 			r.Get("/hosts", s.handleListHosts)
 			r.Get("/hosts/{id}", s.handleGetHost)
@@ -112,6 +127,8 @@ func (s *Server) Handler() http.Handler {
 			r.Get("/updates", s.handleAllUpdates)
 			r.Get("/alerts", s.handleAlertEvents)
 			r.Get("/alerts/rules", s.handleAlertRules)
+			r.Get("/hosts/{id}/units", s.handleListUnits)
+			r.Get("/hosts/{id}/packages", s.handlePackageUpdates)
 
 			r.Group(func(r chi.Router) {
 				r.Use(requireRole("operator"))
@@ -124,6 +141,8 @@ func (s *Server) Handler() http.Handler {
 				r.Get("/hosts/{id}/stacks/{sname}", s.handleGetStack)
 				r.Post("/hosts/{id}/stacks/{sname}/run", s.handleRunStack)
 				r.Post("/hosts/{id}/updates/check", s.handleCheckUpdates)
+				r.Get("/hosts/{id}/processes", s.handleListProcesses)
+				r.Get("/hosts/{id}/journal", s.handleJournal)
 			})
 
 			// Anything that deletes data or can grant host access (a compose
@@ -142,6 +161,8 @@ func (s *Server) Handler() http.Handler {
 				r.Post("/hosts/{id}/stacks", s.handleCreateStack)
 				r.Put("/hosts/{id}/stacks/{sname}", s.handleUpdateStack)
 				r.Delete("/hosts/{id}/stacks/{sname}", s.handleDeleteStack)
+				r.Post("/hosts/{id}/processes/{pid}/signal", s.handleSignalProcess)
+				r.Post("/hosts/{id}/units/{unit}/{action}", s.handleUnitAction)
 				r.Post("/alerts/rules", s.handleCreateRule)
 				r.Put("/alerts/rules/{rid}", s.handleUpdateRule)
 				r.Delete("/alerts/rules/{rid}", s.handleDeleteRule)
@@ -161,6 +182,13 @@ func (s *Server) Handler() http.Handler {
 				r.Post("/hosts/{id}/enrollment", s.handleNewEnrollment)
 				r.Post("/hosts/{id}/rotate-certificate", s.handleRotateCert)
 				r.Get("/audit", s.handleAudit)
+				r.Get("/users", s.handleListUsers)
+				r.Post("/users", s.handleCreateUser)
+				r.Patch("/users/{uid}", s.handleUpdateUser)
+				r.Delete("/users/{uid}", s.handleDeleteUser)
+				r.Post("/users/{uid}/reset", s.handleResetUser)
+				r.Get("/users/{uid}/sessions", s.handleUserSessions)
+				r.Delete("/users/{uid}/sessions", s.handleRevokeUserSessions)
 			})
 		})
 		r.NotFound(func(w http.ResponseWriter, r *http.Request) { writeError(w, http.StatusNotFound, "not found") })

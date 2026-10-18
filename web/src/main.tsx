@@ -1,12 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createRootRoute, createRoute, createRouter, Outlet, RouterProvider } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, Outlet, RouterProvider, useNavigate, useRouterState } from "@tanstack/react-router";
 import "./styles.css";
 import { api, ApiError } from "./lib/api";
 import { useLiveEvents } from "./lib/live";
 import type { Me } from "./lib/types";
-import { LoginPage, SetupPage } from "./pages/Auth";
+import { InvitePage, LoginPage, SetupPage } from "./pages/Auth";
 import { Shell } from "./pages/Shell";
 import { HostsPage } from "./pages/Hosts";
 import { HostDetailPage } from "./pages/HostDetail";
@@ -17,6 +17,9 @@ import { StacksPage } from "./pages/Stacks";
 import { StackDetailPage } from "./pages/StackDetail";
 import { ImagesPage, NetworksPage, VolumesPage } from "./pages/Resources";
 import { AlertsPage } from "./pages/Alerts";
+import { HostSystemPage } from "./pages/HostSystem";
+import { UsersPage } from "./pages/Users";
+import { AccountPage } from "./pages/Account";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +51,13 @@ function Gate() {
   const setup = useQuery({ queryKey: ["setup"], queryFn: api.setupStatus, staleTime: Infinity });
   const me = useMe();
   useLiveEvents(qc, !!me.data);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+
+  // Invitation links work without a session.
+  if (pathname.startsWith("/invite/")) {
+    return <InvitePage token={decodeURIComponent(pathname.slice("/invite/".length))} onDone={() => navigate({ to: "/" })} />;
+  }
 
   if (setup.isPending || me.isPending) {
     return <div className="label grid min-h-screen place-items-center">inicjalizacja…</div>;
@@ -80,6 +90,9 @@ const imagesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts
 const networksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/networks", component: withMe(NetworksPage) });
 const volumesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/volumes", component: withMe(VolumesPage) });
 const alertsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/alerts", component: withMe(AlertsPage) });
+const systemRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/system", component: withMe(HostSystemPage) });
+const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: "/users", component: withMe(UsersPage) });
+const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: "/account", component: withMe(AccountPage) });
 const auditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/audit", component: AuditPage });
 
 const router = createRouter({
@@ -93,6 +106,9 @@ const router = createRouter({
     networksRoute,
     volumesRoute,
     alertsRoute,
+    systemRoute,
+    usersRoute,
+    accountRoute,
     auditRoute,
   ]),
   defaultNotFoundComponent: () => <Outlet />,

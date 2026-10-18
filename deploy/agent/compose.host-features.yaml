@@ -1,0 +1,23 @@
+# Optional host management features for the NexOS agent.
+#
+# Use together with compose.yaml:
+#   docker compose -f compose.yaml -f compose.host-features.yaml up -d
+#
+# Remove a feature from NEXOS_HOST_FEATURES (and its privileges below) if
+# you do not want it on this host.
+services:
+  nexos-agent:
+    environment:
+      NEXOS_HOST_FEATURES: ${NEXOS_HOST_FEATURES:-processes,systemd,packages}
+    # processes: signals must reach host PIDs.
+    pid: host
+    cap_add:
+      # processes: send SIGTERM/SIGKILL to processes of other users.
+      - KILL
+    security_opt:
+      # systemd: Ubuntu's D-Bus enforces AppArmor and Docker's default
+      # profile has no D-Bus rules, so every call is denied otherwise.
+      - apparmor=unconfined
+    volumes:
+      # systemd: list units and start/stop/restart them over D-Bus.
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket

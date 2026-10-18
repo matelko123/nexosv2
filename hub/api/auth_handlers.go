@@ -33,6 +33,9 @@ type pendingSetup struct {
 	passwordHash string
 	totpSecret   string
 	expires      time.Time
+	// Set for invitations (existing pending user); zero for first-run setup.
+	userID      int64
+	inviteToken string
 }
 
 func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +125,7 @@ func (s *Server) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 	s.setupMu.Lock()
 	p, ok := s.setups[req.SetupID]
 	s.setupMu.Unlock()
-	if !ok || time.Now().After(p.expires) {
+	if !ok || p.userID != 0 || time.Now().After(p.expires) {
 		writeError(w, http.StatusBadRequest, "setup session expired, start again")
 		return
 	}
@@ -192,6 +195,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	if !auth.VerifyPassword(u.PasswordHash, req.Password) {
 		fail("bad password", u)
+		return
+	}
+	// No code: a passkey can serve as the second factor instead of TOTP.
+	if strings.TrimSpace(req.Code) == "" {
+		if s.beginPasskeyLogin(w, r, u) {
+			return
+		}
+		fail("missing second factor", u)
 		return
 	}
 	secret, err := s.sealer.Open(u.TOTPSecret)
