@@ -93,6 +93,17 @@ Hub co 6 h sprawdza najnowsze wydanie i pokazuje administratorom baner z opisem 
 
 Prywatne repozytorium: ustaw `NEXOS_UPDATE_GITHUB_TOKEN` w hubie (token klasyczny z zakresami `repo` i `read:packages`) — służy do odczytu wydań i jest przekazywany agentom do pobrania obrazów z ghcr.io.
 
+## Odzyskiwanie dostępu
+
+Zapomniane hasło lub utracone TOTP: inny administrator klika „reset” na stronie Użytkownicy. Jeśli nie ma nikogo, kto może się zalogować, na serwerze huba:
+
+```sh
+docker exec nexos-hub /nexos-hub reset-user          # lista kont
+docker exec nexos-hub /nexos-hub reset-user admin    # reset + jednorazowy link
+```
+
+Polecenie usuwa hasło, TOTP, passkeys i sesje użytkownika i wypisuje link `/invite/…` (ważny 48 h), pod którym ustawia się nowe hasło i TOTP. Wymaga dostępu do Dockera na hoście huba.
+
 ## Konfiguracja
 
 | Zmienna | Domyślnie | Opis |

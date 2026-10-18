@@ -103,6 +103,17 @@ func (s *Store) DeleteUser(ctx context.Context, id int64) error {
 // ResetUserCredentials clears password, TOTP and passkeys and ends all
 // sessions; the user can only regain access through a new invitation.
 func (s *Store) ResetUserCredentials(ctx context.Context, id int64) error {
+	return s.resetCredentials(ctx, id, false)
+}
+
+// RecoverUserCredentials is ResetUserCredentials for the host-side recovery
+// command: it may reset the last admin, who then has to redeem the new
+// invitation to get back in.
+func (s *Store) RecoverUserCredentials(ctx context.Context, id int64) error {
+	return s.resetCredentials(ctx, id, true)
+}
+
+func (s *Store) resetCredentials(ctx context.Context, id int64, allowLastAdmin bool) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -115,6 +126,9 @@ func (s *Store) ResetUserCredentials(ctx context.Context, id int64) error {
 		if _, err := tx.ExecContext(ctx, q, id); err != nil {
 			return err
 		}
+	}
+	if allowLastAdmin {
+		return tx.Commit()
 	}
 	if n, err := s.countAdmins(ctx, tx); err != nil {
 		return err
