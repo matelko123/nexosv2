@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, resources } from "../lib/api";
 import { useRun } from "../lib/useRun";
 import type { Me, StackOperation } from "../lib/types";
-import { Confirm, ErrorText, PanelHeader } from "../components/ui";
+import { Confirm, ErrorText } from "../components/ui";
 import { CodeEditor } from "../components/CodeEditor";
 import { OutputConsole } from "../components/OutputConsole";
 import { useHostUpdates } from "../components/updates";
@@ -22,7 +22,10 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
   const navigate = useNavigate();
   const isAdmin = me.user.role === "admin";
   const canOperate = me.user.role !== "viewer";
-  const detail = useQuery({ queryKey: ["stack", hostId, name], queryFn: () => resources.stack(hostId, name), enabled: canOperate });
+  // Project files (compose, .env with secrets) stay collapsed and are fetched only once opened.
+  const [filesOpen, setFilesOpen] = useState(false);
+  const [filesRequested, setFilesRequested] = useState(false);
+  const detail = useQuery({ queryKey: ["stack", hostId, name], queryFn: () => resources.stack(hostId, name), enabled: canOperate && filesRequested });
   const list = useQuery({ queryKey: ["stacks", hostId], queryFn: () => resources.stacks(hostId) });
   const containers = useQuery({ queryKey: ["containers", hostId], queryFn: () => api.containers(hostId) });
   const stack = list.data?.find((s) => s.name === name) ?? detail.data?.stack;
@@ -161,83 +164,103 @@ function StackView({ hostId, name, me }: { hostId: string; name: string; me: Me 
         <div className="panel px-4 py-4 text-sm text-ink-3">Stack nie ma kontenerów — uruchom „up”, aby zobaczyć zużycie zasobów.</div>
       )}
 
-      <div>
-        <section className="panel flex min-h-[520px] flex-col">
-          {managed ? (
-            <>
-              <div className="flex items-center justify-between gap-3 border-b border-rule px-3 py-2">
-                <div className="tabs" role="tablist">
-                  {(["compose", "env"] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFile(f)}
-                      role="tab"
-                      aria-selected={file === f}
-                      className="tab readout"
-                    >
-                      {f === "compose" ? "compose.yaml" : ".env"}
-                    </button>
+      <section className="panel">
+        <button
+          type="button"
+          aria-expanded={filesOpen}
+          aria-controls="stack-files"
+          onClick={() => {
+            setFilesOpen(!filesOpen);
+            setFilesRequested(true);
+          }}
+          className="flex min-h-12 w-full items-center gap-3 rounded-[var(--radius-card)] px-4 py-2.5 text-left transition-colors hover:bg-ink-3/5 active:bg-ink-3/10"
+        >
+          <svg viewBox="0 0 12 12" className={`size-3 shrink-0 text-ink-3 transition-transform duration-200 ${filesOpen ? "rotate-90" : ""}`} aria-hidden>
+            <path d="M4.5 2.5L8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">Pliki projektu</span>
+          <span className="readout truncate text-xs text-ink-3">{managed ? "compose.yaml · .env" : "tylko odczyt"}</span>
+          <span className="ml-auto flex shrink-0 items-center gap-3">
+            {dirty && <span className="label !text-warn">niezapisane zmiany</span>}
+            <span className="text-[13px] text-accent">{filesOpen ? "Zwiń" : "Pokaż"}</span>
+          </span>
+        </button>
+        {filesOpen && (
+          <div id="stack-files" className="flex min-h-[520px] flex-col border-t border-rule">
+            {managed ? (
+              <>
+                <div className="flex items-center justify-between gap-3 border-b border-rule px-3 py-2">
+                  <div className="tabs" role="tablist">
+                    {(["compose", "env"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setFile(f)}
+                        role="tab"
+                        aria-selected={file === f}
+                        className="tab readout"
+                      >
+                        {f === "compose" ? "compose.yaml" : ".env"}
+                      </button>
+                    ))}
+                  </div>
+                  {isAdmin ? (
+                    <div className="flex items-center gap-2">
+                      {dirty && <span className="label !text-warn">niezapisane zmiany</span>}
+                      <button className="btn btn-sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()} title="Ctrl+S">
+                        Zapisz
+                      </button>
+                      <button className="btn btn-primary btn-sm" disabled={(!dirty && stack.status === "running") || save.isPending || busy} onClick={saveAndDeploy}>
+                        Zapisz i wdróż
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="label">tylko odczyt</span>
+                  )}
+                </div>
+                <div className="flex-1 p-2">
+                  {!detail.data ? (
+                    <div className="label p-3">{detail.isPending ? "ładowanie…" : "brak dostępu do plików"}</div>
+                  ) : file === "compose" ? (
+                    <CodeEditor value={compose} onChange={setCompose} readOnly={!isAdmin} onSave={() => dirty && save.mutate()} />
+                  ) : detail.data.env_visible ? (
+                    <CodeEditor value={env} onChange={setEnv} language="env" readOnly={!isAdmin} onSave={() => dirty && save.mutate()} />
+                  ) : (
+                    <div className="p-4 text-sm text-ink-3">Plik .env może zawierać sekrety — widoczny tylko dla administratorów.</div>
+                  )}
+                </div>
+                {save.error && (
+                  <div className="border-t border-rule p-2">
+                    <pre className="readout max-h-40 overflow-auto rounded-[var(--radius-control)] bg-alarm/10 px-3 py-2 text-xs whitespace-pre-wrap text-alarm">
+                      {save.error instanceof Error ? save.error.message : String(save.error)}
+                    </pre>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex-1 space-y-3 overflow-auto p-3">
+                  {!detail.data && <div className="label">{detail.isPending ? "ładowanie…" : "brak dostępu"}</div>}
+                  {detail.data?.files.map((f) => (
+                    <div key={f.path} className="space-y-1">
+                      <div className="readout text-xs text-ink-2">{f.path}</div>
+                      {f.error ? (
+                        <div className="text-xs text-warn">nie można odczytać: {f.error}</div>
+                      ) : (
+                        <div className="h-[360px]">
+                          <CodeEditor value={f.content ?? ""} readOnly language={f.path?.endsWith(".env") ? "env" : "yaml"} />
+                        </div>
+                      )}
+                    </div>
                   ))}
+                  <p className="text-xs text-ink-3">
+                    Ten projekt jest uruchamiany spoza NexOS. Aby edytować go tutaj, przenieś jego pliki do katalogu stacków agenta.
+                  </p>
                 </div>
-                {isAdmin ? (
-                  <div className="flex items-center gap-2">
-                    {dirty && <span className="label !text-warn">niezapisane zmiany</span>}
-                    <button className="btn btn-sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()} title="Ctrl+S">
-                      Zapisz
-                    </button>
-                    <button className="btn btn-primary btn-sm" disabled={(!dirty && stack.status === "running") || save.isPending || busy} onClick={saveAndDeploy}>
-                      Zapisz i wdróż
-                    </button>
-                  </div>
-                ) : (
-                  <span className="label">tylko odczyt</span>
-                )}
-              </div>
-              <div className="flex-1 p-2">
-                {!detail.data ? (
-                  <div className="label p-3">{detail.isPending ? "ładowanie…" : "brak dostępu do plików"}</div>
-                ) : file === "compose" ? (
-                  <CodeEditor value={compose} onChange={setCompose} readOnly={!isAdmin} onSave={() => dirty && save.mutate()} />
-                ) : detail.data.env_visible ? (
-                  <CodeEditor value={env} onChange={setEnv} language="env" readOnly={!isAdmin} onSave={() => dirty && save.mutate()} />
-                ) : (
-                  <div className="p-4 text-sm text-ink-3">Plik .env może zawierać sekrety — widoczny tylko dla administratorów.</div>
-                )}
-              </div>
-              {save.error && (
-                <div className="border-t border-rule p-2">
-                  <pre className="readout max-h-40 overflow-auto rounded-[var(--radius-control)] bg-alarm/10 px-3 py-2 text-xs whitespace-pre-wrap text-alarm">
-                    {save.error instanceof Error ? save.error.message : String(save.error)}
-                  </pre>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <PanelHeader title="Pliki projektu (tylko odczyt)" />
-              <div className="flex-1 space-y-3 overflow-auto p-3">
-                {!detail.data && <div className="label">{detail.isPending ? "ładowanie…" : "brak dostępu"}</div>}
-                {detail.data?.files.map((f) => (
-                  <div key={f.path} className="space-y-1">
-                    <div className="readout text-xs text-ink-2">{f.path}</div>
-                    {f.error ? (
-                      <div className="text-xs text-warn">nie można odczytać: {f.error}</div>
-                    ) : (
-                      <div className="h-[360px]">
-                        <CodeEditor value={f.content ?? ""} readOnly language={f.path?.endsWith(".env") ? "env" : "yaml"} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <p className="text-xs text-ink-3">
-                  Ten projekt jest uruchamiany spoza NexOS. Aby edytować go tutaj, przenieś jego pliki do katalogu stacków agenta.
-                </p>
-              </div>
-            </>
-          )}
-        </section>
-
-      </div>
+              </>
+            )}
+          </div>
+        )}
+      </section>
 
       {confirm === "down" && (
         <Confirm title={`down · ${name}`} confirmLabel="Down" danger onClose={() => setConfirm(null)} onConfirm={() => op("down", { remove_volumes: opts.volumes })}>
