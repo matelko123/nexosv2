@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Web
+        working-directory: web
+        run: |
+          npm ci
+          npx tsc -b
+          npm run build
+      - name: Go
+        run: |
+          test -z "$(gofmt -l agent hub internal)" || (gofmt -l agent hub internal; exit 1)
+          go vet ./...
+          go test ./...

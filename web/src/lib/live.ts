@@ -105,6 +105,9 @@ export function useLiveEvents(qc: QueryClient, enabled: boolean) {
           case "alert.resolved":
             scheduleRefetch(qc, ["alerts"]);
             break;
+          case "release.available":
+            scheduleRefetch(qc, ["nexos-version"]);
+            break;
           case "updates.checked":
             scheduleRefetch(qc, ["updates"]);
             break;

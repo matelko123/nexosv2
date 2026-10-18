@@ -23,6 +23,7 @@ import (
 	"nexos/hub/alerts"
 	"nexos/hub/auth"
 	"nexos/hub/events"
+	"nexos/hub/selfupdate"
 	"nexos/hub/store"
 	"nexos/hub/updates"
 )
@@ -53,13 +54,15 @@ type Config struct {
 }
 
 type Server struct {
-	cfg     Config
-	store   *store.Store
-	agents  *agents.Manager
-	bus     *events.Bus
-	sealer  *auth.Sealer
-	alerts  *alerts.Engine
-	updates *updates.Checker
+	cfg      Config
+	store    *store.Store
+	agents   *agents.Manager
+	bus      *events.Bus
+	sealer   *auth.Sealer
+	alerts   *alerts.Engine
+	updates  *updates.Checker
+	releases *selfupdate.Checker
+	hubLoc   hubLocator
 
 	loginByIP   *auth.Limiter
 	loginByUser *auth.Limiter
@@ -70,9 +73,9 @@ type Server struct {
 	webauthn waSessions
 }
 
-func New(cfg Config, st *store.Store, mgr *agents.Manager, bus *events.Bus, sealer *auth.Sealer, eng *alerts.Engine, chk *updates.Checker) *Server {
+func New(cfg Config, st *store.Store, mgr *agents.Manager, bus *events.Bus, sealer *auth.Sealer, eng *alerts.Engine, chk *updates.Checker, rel *selfupdate.Checker) *Server {
 	return &Server{
-		cfg: cfg, store: st, agents: mgr, bus: bus, sealer: sealer, alerts: eng, updates: chk,
+		cfg: cfg, store: st, agents: mgr, bus: bus, sealer: sealer, alerts: eng, updates: chk, releases: rel,
 		loginByIP:   auth.NewLimiter(12*time.Second, 10), // 10 burst, then 5/min
 		loginByUser: auth.NewLimiter(time.Minute, 5),
 		setups:      map[string]*pendingSetup{},
@@ -100,6 +103,7 @@ func (s *Server) Handler() http.Handler {
 			r.Get("/auth/me", s.handleMe)
 			r.Post("/auth/logout", s.handleLogout)
 			r.Get("/ws", s.handleWS)
+			r.Get("/system/version", s.handleVersion)
 			r.Get("/account", s.handleAccount)
 			r.Post("/account/password", s.handleChangePassword)
 			r.Delete("/account/sessions/{sid}", s.handleRevokeSession)
@@ -182,6 +186,9 @@ func (s *Server) Handler() http.Handler {
 				r.Post("/hosts/{id}/enrollment", s.handleNewEnrollment)
 				r.Post("/hosts/{id}/rotate-certificate", s.handleRotateCert)
 				r.Get("/audit", s.handleAudit)
+				r.Post("/system/version/check", s.handleCheckVersion)
+				r.Post("/system/update/hub", s.handleUpdateHub)
+				r.Post("/hosts/{id}/update-agent", s.handleUpdateAgent)
 				r.Get("/users", s.handleListUsers)
 				r.Post("/users", s.handleCreateUser)
 				r.Patch("/users/{uid}", s.handleUpdateUser)

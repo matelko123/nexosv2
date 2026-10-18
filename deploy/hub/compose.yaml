@@ -3,10 +3,8 @@
 # endpoint to the WireGuard address. The container itself is unprivileged.
 services:
   nexos-hub:
-    image: nexos-hub:latest
-    build:
-      context: ../..
-      dockerfile: Dockerfile.hub
+    # Updated from the NexOS UI (Aktualizacje) or with: docker compose pull && docker compose up -d
+    image: ghcr.io/matelko123/nexosv2-hub:latest
     container_name: nexos-hub
     # Protects the container from stop/remove via the NexOS UI.
     labels: { nexos.role: hub }

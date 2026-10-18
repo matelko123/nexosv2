@@ -20,10 +20,8 @@ import (
 	"nexos/agent/stacks"
 	nexosv1 "nexos/internal/gen/nexos/v1"
 	"nexos/internal/pki"
+	"nexos/internal/version"
 )
-
-// Version is set at build time.
-var Version = "dev"
 
 type Server struct {
 	id     *identity.Identity
@@ -56,6 +54,7 @@ func (s *Server) GRPCServer() *grpc.Server {
 	nexosv1.RegisterVolumeServiceServer(gs, &volumeService{s: s})
 	nexosv1.RegisterStackServiceServer(gs, &stackService{s: s})
 	nexosv1.RegisterHostServiceServer(gs, &hostService{s: s})
+	nexosv1.RegisterUpdateServiceServer(gs, &updateService{s: s})
 	return gs
 }
 
@@ -94,7 +93,7 @@ type systemService struct {
 
 func (x *systemService) GetInfo(ctx context.Context, _ *nexosv1.GetInfoRequest) (*nexosv1.GetInfoResponse, error) {
 	info := metrics.HostInfo(ctx)
-	info.AgentVersion = Version
+	info.AgentVersion = version.Version
 	info.HostFeatures = x.s.host.Features()
 	if x.s.docker != nil {
 		info.Docker = x.s.docker.Info(ctx)

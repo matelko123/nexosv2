@@ -23,9 +23,11 @@ import (
 	"nexos/hub/auth"
 	"nexos/hub/certs"
 	"nexos/hub/events"
+	"nexos/hub/selfupdate"
 	"nexos/hub/store"
 	"nexos/hub/updates"
 	"nexos/internal/pki"
+	"nexos/internal/version"
 	"nexos/web"
 )
 
@@ -82,6 +84,7 @@ func run() error {
 	}
 	var retention store.Retention
 	updateInterval := time.Duration(0)
+	releaseInterval := time.Duration(0)
 	for _, d := range []struct {
 		env, def string
 		dst      *time.Duration
@@ -92,6 +95,7 @@ func run() error {
 		{"NEXOS_RETENTION_CONTAINERS", "168h", &retention.Container},
 		{"NEXOS_RETENTION_ALERTS", "2160h", &retention.Events},
 		{"NEXOS_UPDATE_CHECK_INTERVAL", "6h", &updateInterval},
+		{"NEXOS_RELEASE_CHECK_INTERVAL", "6h", &releaseInterval},
 	} {
 		v, err := time.ParseDuration(env(d.env, d.def))
 		if err != nil {
@@ -110,6 +114,15 @@ func run() error {
 	go checker.Run(ctx)
 	engine := alerts.NewEngine(st, mgr, bus, sealer)
 	go engine.Run(ctx)
+	releases := selfupdate.New(selfupdate.Config{
+		APIURL:      env("NEXOS_UPDATE_API_URL", "https://api.github.com"),
+		Repo:        env("NEXOS_UPDATE_REPO", "matelko123/nexosv2"),
+		Token:       os.Getenv("NEXOS_UPDATE_GITHUB_TOKEN"),
+		ImagePrefix: env("NEXOS_UPDATE_IMAGE_PREFIX", "ghcr.io/matelko123/nexosv2-"),
+		Interval:    releaseInterval,
+	}, bus)
+	go releases.Run(ctx)
+	slog.Info("NexOS hub", "version", version.Version)
 
 	// Enrollment endpoint (agents only, intended for the WireGuard address).
 	enrollListen := os.Getenv("NEXOS_ENROLL_LISTEN")
@@ -153,7 +166,7 @@ func run() error {
 		TrustedProxies:  trusted,
 		WebAuthnOrigins: splitList(os.Getenv("NEXOS_WEBAUTHN_ORIGINS")),
 		Static:          web.Dist(),
-	}, st, mgr, bus, sealer, engine, checker)
+	}, st, mgr, bus, sealer, engine, checker, releases)
 	go apiSrv.Maintenance(ctx)
 
 	ui := &http.Server{

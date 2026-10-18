@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package nexos.v1;
+
+option go_package = "nexos/internal/gen/nexos/v1;nexosv1";
+
+// UpdateService updates NexOS components running on the agent's host.
+//
+// A container cannot recreate itself, so the agent pulls the new image and
+// starts a short-lived helper container (from the agent image) that runs
+// `docker compose up -d` for the component's compose service. Updating the
+// agent itself ends the stream when the agent is replaced.
+service UpdateService {
+  rpc UpdateComponent(UpdateComponentRequest) returns (stream UpdateComponentResponse);
+}
+
+message UpdateComponentRequest {
+  // "hub" or "agent": the container labelled nexos.role=<role>.
+  string role = 1;
+  // Image to deploy, e.g. ghcr.io/matelko123/nexosv2-agent:v1.2.0. Must
+  // belong to the official repository (NEXOS_UPDATE_IMAGE_PREFIX).
+  string image = 2;
+  // Base64 encoded registry credentials for private images (optional).
+  string registry_auth = 3;
+}
+
+message UpdateComponentResponse {
+  string line = 1;
+  // Set on the last message once the helper has been started.
+  bool done = 2;
+}

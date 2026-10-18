@@ -24,6 +24,7 @@ import type {
   ImageUpdateInfo,
   Me,
   MetricPoint,
+  NexosVersion,
   PruneResult,
   PullProgress,
   Stack,
@@ -257,3 +258,10 @@ export async function loginWithPasskey(loginId: string, options: { publicKey: un
   if (!cred) throw new Error("Anulowano");
   return withCsrf((await postRaw(`/auth/passkey?login_id=${encodeURIComponent(loginId)}`, cred.toJSON())) as Me);
 }
+
+export const systemApi = {
+  version: () => request<NexosVersion>("GET", "/system/version"),
+  check: () => request<NexosVersion>("POST", "/system/version/check"),
+  updateHub: (on: (m: StreamMsg) => void) => streamRequest("POST", "/system/update/hub", undefined, on),
+  updateAgent: (hostId: string, on: (m: StreamMsg) => void) => streamRequest("POST", `/hosts/${hostId}/update-agent`, undefined, on),
+};

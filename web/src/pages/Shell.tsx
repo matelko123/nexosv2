@@ -5,12 +5,14 @@ import { useLiveConnection } from "../lib/live";
 import type { Me } from "../lib/types";
 import { StatusLamp } from "../components/ui";
 import { isInfo, useActiveAlerts } from "./Alerts";
+import { UpdateBanner } from "./Updates";
 
 const nav = [
   { to: "/", label: "Hosty", code: "01" },
   { to: "/alerts", label: "Alerty", code: "02" },
   { to: "/audit", label: "Audyt", code: "03", admin: true },
   { to: "/users", label: "Użytkownicy", code: "04", admin: true },
+  { to: "/updates", label: "Aktualizacje", code: "05", admin: true },
 ] as const;
 
 export function Shell({ me }: { me: Me }) {
@@ -80,6 +82,7 @@ export function Shell({ me }: { me: Me }) {
         </div>
       </aside>
       <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
+        <UpdateBanner me={me} />
         <Outlet />
       </main>
     </div>

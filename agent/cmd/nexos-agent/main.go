@@ -21,6 +21,7 @@ import (
 	"nexos/agent/stacks"
 	"nexos/internal/enroll"
 	"nexos/internal/pki"
+	"nexos/internal/version"
 )
 
 func main() {
@@ -39,8 +40,10 @@ func main() {
 			break
 		}
 		err = doEnroll(os.Args[2])
+	case "update-helper":
+		err = runUpdateHelper(os.Args[2:])
 	case "version":
-		fmt.Println(server.Version)
+		fmt.Println(version.Version)
 	default:
 		err = fmt.Errorf("unknown command %q (run, enroll, version)", cmd)
 	}
@@ -172,6 +175,6 @@ func run() error {
 		<-ctx.Done()
 		gs.GracefulStop()
 	}()
-	slog.Info("agent listening", "addr", addr, "agent_id", id.AgentID, "cert_not_after", id.KeyPair.Leaf().NotAfter, "version", server.Version)
+	slog.Info("agent listening", "addr", addr, "agent_id", id.AgentID, "cert_not_after", id.KeyPair.Leaf().NotAfter, "version", version.Version)
 	return gs.Serve(ln)
 }

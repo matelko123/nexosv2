@@ -86,7 +86,7 @@ func setupServer(t *testing.T) (*httptest.Server, *store.Store) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := New(Config{SetupToken: "setup-token"}, st, nil, events.NewBus(), sealer, nil, nil)
+	s := New(Config{SetupToken: "setup-token"}, st, nil, events.NewBus(), sealer, nil, nil, nil)
 	srv := httptest.NewServer(s.Handler())
 	t.Cleanup(srv.Close)
 	return srv, st

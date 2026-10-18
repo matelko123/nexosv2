@@ -20,6 +20,7 @@ import { AlertsPage } from "./pages/Alerts";
 import { HostSystemPage } from "./pages/HostSystem";
 import { UsersPage } from "./pages/Users";
 import { AccountPage } from "./pages/Account";
+import { UpdatesPage } from "./pages/Updates";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,7 @@ const alertsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/alert
 const systemRoute = createRoute({ getParentRoute: () => rootRoute, path: "/hosts/$id/system", component: withMe(HostSystemPage) });
 const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: "/users", component: withMe(UsersPage) });
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: "/account", component: withMe(AccountPage) });
+const updatesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/updates", component: withMe(UpdatesPage) });
 const auditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/audit", component: AuditPage });
 
 const router = createRouter({
@@ -109,6 +111,7 @@ const router = createRouter({
     systemRoute,
     usersRoute,
     accountRoute,
+    updatesRoute,
     auditRoute,
   ]),
   defaultNotFoundComponent: () => <Outlet />,

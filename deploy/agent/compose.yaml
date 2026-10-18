@@ -4,10 +4,8 @@
 # into a .env file next to this file. Remove NEXOS_ENROLL after enrollment.
 services:
   nexos-agent:
-    image: nexos-agent:latest
-    build:
-      context: ../..
-      dockerfile: Dockerfile.agent
+    # Updated from the NexOS UI (Aktualizacje) or with: docker compose pull && docker compose up -d
+    image: ghcr.io/matelko123/nexosv2-agent:latest
     container_name: nexos-agent
     # Protects the container from stop/remove via the NexOS UI.
     labels: { nexos.role: agent }

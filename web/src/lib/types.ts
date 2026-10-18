@@ -142,7 +142,8 @@ export type LiveEvent =
   | { type: "host.status"; host_id: string; data: { status: HostStatus; error?: string; since: string } }
   | { type: "docker.event"; host_id: string; data: DockerEvent }
   | { type: "alert.fired" | "alert.resolved"; host_id?: string; data: unknown }
-  | { type: "updates.checked"; host_id: string; data: { images: number; updates: number } };
+  | { type: "updates.checked"; host_id: string; data: { images: number; updates: number } }
+  | { type: "release.available"; host_id?: string; data: unknown };
 
 export interface ContainerPort {
   ip?: string;
@@ -469,4 +470,25 @@ export interface PasskeyChallenge {
   passkey_required: true;
   login_id: string;
   options: { publicKey: unknown };
+}
+
+export interface NexosRelease {
+  version: string;
+  name?: string;
+  notes?: string;
+  url?: string;
+  published_at?: string;
+}
+
+export interface NexosVersion {
+  hub: {
+    hub_version: string;
+    latest?: NexosRelease;
+    update_available: boolean;
+    checked_at?: string;
+    error?: string;
+    repo: string;
+  };
+  hosts: { id: string; name: string; status: string; agent_version?: string; update_available: boolean; runs_hub: boolean }[];
+  hub_host_id?: string;
 }
