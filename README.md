@@ -37,7 +37,42 @@ Agent ma dostęp do `docker.sock`, czyli jest równoważny rootowi na hoście �
 
 ## Wdrożenie
 
-### 1. WireGuard (na obu serwerach, poza Dockerem)
+### Szybka instalacja (Debian/Ubuntu)
+
+Na serwerze A (hub):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/matelko123/nexosv2/main/install.sh | sudo bash -s -- hub
+```
+
+Skrypt instaluje brakujące pakiety (Docker, WireGuard, nftables) i:
+
+- konfiguruje `wg0` (`10.66.0.1`, UDP 51821),
+- zakłada reguły firewalla (tabela `inet nexos`, ładowana usługą `nexos-firewall`),
+- uruchamia hub w `/opt/nexos/hub` oraz lokalnego agenta w `/opt/nexos/agent` i od razu go rejestruje,
+- na końcu wypisuje adres UI i setup token.
+
+Zapyta o publiczny adres/DDNS lokalizacji A (`--endpoint`). Przekieruj UDP 51821 na routerze na serwer A.
+
+Kolejny serwer: na hubie
+
+```sh
+sudo nexos add-host serwer-b
+```
+
+Komenda przydziela adres WG, dodaje peera i wypisuje polecenie `curl … | sudo bash -s -- agent --join nxj1_…` do wykonania na nowym serwerze w ciągu 15 minut. Token zawiera klucz WireGuard tego serwera (wygenerowany na hubie, nigdzie niezapisany), więc nie udostępniaj go. Agent sam zestawia tunel, firewall, rejestruje się i usuwa pakiet z `.env`.
+
+Inne polecenia (`nexos help`):
+
+- `nexos remove-host <nazwa>` usuwa peera WG,
+- `nexos enroll <nxe1_…>` ponawia rejestrację pakietem z UI, np. po wygaśnięciu,
+- `nexos uninstall [--purge]` usuwa NexOS z serwera.
+
+Opcje: `--host-features` (procesy/systemd/apt dla agenta), `--no-firewall`, `--no-agent` (hub), `--lan CIDR` (sieć z dostępem do UI). Skrypt nie nadpisze `/etc/wireguard/wg0.conf`, którego sam nie utworzył; wtedy zostaje instalacja ręczna poniżej.
+
+### Instalacja ręczna
+
+#### 1. WireGuard (na obu serwerach, poza Dockerem)
 
 ```sh
 apt install wireguard
@@ -53,14 +88,14 @@ wg show          # powinien być "latest handshake"
 ping 10.66.0.2   # z A
 ```
 
-### 2. Firewall
+#### 2. Firewall
 
 ```sh
 nft -f deploy/firewall/nftables-hub.nft     # na A (popraw LAN)
 nft -f deploy/firewall/nftables-agent.nft   # na B
 ```
 
-### 3. Hub (serwer A)
+#### 3. Hub (serwer A)
 
 ```sh
 cd deploy/hub   # obrazy: ghcr.io/matelko123/nexosv2-* (lokalnie: make docker)
@@ -70,7 +105,7 @@ docker compose logs nexos-hub | grep setup_token
 
 Otwórz `https://<IP-serwera-A>:8443`, podaj token, utwórz konto i zeskanuj kod TOTP. Certyfikat UI jest podpisany przez CA z wolumenu (`/data/ui-pki/ca.crt`) — możesz go zaimportować do przeglądarki, albo postawić hub za reverse proxy (`NEXOS_UI_TLS=off`, `NEXOS_TRUSTED_PROXIES`). Dodaj adres/nazwę, pod którą otwierasz UI, do `NEXOS_UI_HOSTS`.
 
-### 4. Agenci
+#### 4. Agenci
 
 W UI: **Dodaj host** → nazwa + adres agenta (`10.66.0.1:7443` dla A, `10.66.0.2:7443` dla B). Skopiuj pokazany pakiet do `deploy/agent/.env` na danym serwerze:
 

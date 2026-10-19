@@ -39,12 +39,15 @@ func env(key, def string) string {
 }
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "reset-user" {
-		if err := resetUser(os.Args[2:]); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+	if len(os.Args) > 1 {
+		cmds := map[string]func([]string) error{"reset-user": resetUser, "add-host": addHost}
+		if cmd, ok := cmds[os.Args[1]]; ok {
+			if err := cmd(os.Args[2:]); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			return
 		}
-		return
 	}
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 	if err := run(); err != nil {
