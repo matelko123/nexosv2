@@ -23,6 +23,9 @@ services:
       NEXOS_ENROLL_LISTEN: ${NEXOS_ENROLL_LISTEN:-10.66.0.1:7444}
       NEXOS_METRICS_INTERVAL: ${NEXOS_METRICS_INTERVAL:-5s}
       NEXOS_METRICS_RETENTION: ${NEXOS_METRICS_RETENTION:-24h}
+      # Private repository: classic token with repo + read:packages, used to
+      # read releases and handed to agents to pull update images.
+      NEXOS_UPDATE_GITHUB_TOKEN: ${NEXOS_UPDATE_GITHUB_TOKEN:-}
     volumes:
       - nexos-hub-data:/data
 
